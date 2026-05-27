@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Hacker 代谢与食物矩阵仪表盘 v4.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .macro-bar { height: 8px; border-radius: 4px; display: flex; overflow: hidden; margin-top: 8px; }
+        .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body class="p-6">
+    <div id="app" class="max-w-5xl mx-auto space-y-6">
+        <header class="flex justify-between items-end border-b border-slate-700 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v4.0)</h1>
+                <p class="text-slate-400">内置靶向食物矩阵与营养逆向换算引擎</p>
+            </div>
+        </header>
+
+        <!-- 第一部分：身体参数与宏量计算 (沿用之前的核心逻辑) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-card p-6 rounded-xl col-span-1 border-t-4 border-t-emerald-500">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-300">⚙️ 参数与策略设定</h2>
+                <div class="space-y-4 text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-slate-400 mb-1">体重 (kg)</label>
+                            <input type="number" v-model.number="weight" class="w-full bg-slate-800 text-white border border-slate-600 rounded p-2 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">骨骼肌 (kg)</label>
+                            <input type="number" v-model.number="muscle" class="w-full bg-slate-800 text-white border border-slate-600 rounded p-2 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">体脂率 (%)</label>
+                        <input type="number" v-model.number="bodyFat" class="w-full bg-slate-800 text-white border border-slate-600 rounded p-2 focus:outline-none">
+                    </div>
+                    <div class="pt-3 border-t border-slate-700">
+                        <label class="block text-emerald-400 font-bold mb-2">🧬 饮食架构</label>
+                        <select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-emerald-700 rounded p-2 focus:outline-none">
+                            <option value="keto">🥩 靶向生酮 (Keto/TKD)</option>
+                            <option value="low_carb">🥑 温和低碳 (Low-Carb)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-xl col-span-1 md:col-span-2">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-300">⚖️ 目标宏量营养素 (训练日示例)</h2>
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="bg-slate-800 p-4 rounded-lg border border-blue-900">
+                        <div class="text-blue-400 text-sm font-bold">碳水目标</div>
+                        <div class="text-2xl font-bold text-white">{{ trainMacros.carb }} <span class="text-sm">g</span></div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-lg border border-purple-900">
+                        <div class="text-purple-400 text-sm font-bold">蛋白目标</div>
+                        <div class="text-2xl font-bold text-white">{{ trainMacros.protein }} <span class="text-sm">g</span></div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-lg border border-yellow-900">
+                        <div class="text-yellow-400 text-sm font-bold">脂肪目标</div>
+                        <div class="text-2xl font-bold text-white">{{ trainMacros.fat }} <span class="text-sm">g</span></div>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-400">目前你的 TDEE 约为 <span class="text-white font-bold">{{ tdee }}</span> kcal。以下是将这些抽象数字落地为真实食物的工具库 👇</p>
+            </div>
+        </div>
+
+        <!-- 第二部分：本地极客食物矩阵数据库 -->
+        <div class="glass-card p-6 rounded-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-emerald-300">🥘 核心食物矩阵库 (每100g含量)</h2>
+                <select v-model="activeCategory" class="bg-slate-800 text-white border border-slate-600 rounded p-1 text-sm focus:outline-none">
+                    <option value="all">显示全部</option>
+                    <option value="protein">仅看蛋白质源</option>
+                    <option value="carb">仅看碳水源</option>
+                    <option value="fat">仅看脂肪源</option>
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div v-for="food in filteredFoods" :key="food.name" class="bg-slate-800 p-4 rounded-lg border border-slate-700 hover:border-emerald-500 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-white">{{ food.name }}</h3>
+                        <span class="badge" :class="getBadgeClass(food.category)">{{ food.category }}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">{{ food.tag }}</p>
+                    <div class="grid grid-cols-3 gap-1 text-center text-xs">
+                        <div class="bg-slate-900 p-1 rounded"><span class="block text-blue-400">碳</span>{{ food.netCarbs }}g</div>
+                        <div class="bg-slate-900 p-1 rounded"><span class="block text-purple-400">蛋</span>{{ food.protein }}g</div>
+                        <div class="bg-slate-900 p-1 rounded"><span class="block text-yellow-400">脂</span>{{ food.fat }}g</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三部分：逆向食物翻译器 -->
+        <div class="glass-card p-6 rounded-xl border-l-4 border-l-purple-500">
+            <h2 class="text-xl font-semibold mb-4 text-purple-300">🧮 逆向翻译器：缺什么，吃多少？</h2>
+            <div class="flex flex-col md:flex-row gap-4 items-center bg-slate-800 p-4 rounded-lg border border-slate-700">
+                <span class="text-slate-300">我这一餐需要补充</span>
+                <input type="number" v-model.number="targetAmount" class="w-24 bg-slate-900 text-white border border-slate-600 rounded p-2 text-center focus:outline-none">
+                <span class="text-slate-300">克的</span>
+                <select v-model="targetMacro" class="bg-slate-900 text-white border border-slate-600 rounded p-2 focus:outline-none">
+                    <option value="protein">蛋白质</option>
+                    <option value="netCarbs">净碳水 (快充)</option>
+                    <option value="fat">优质脂肪</option>
+                </select>
+            </div>
+
+            <div class="mt-6">
+                <h4 class="text-sm text-slate-400 mb-3">系统推荐食材及所需重量 (附带成分已计算)：</h4>
+                <div class="space-y-3">
+                    <div v-for="result in calcResults" :key="result.name" class="flex items-center justify-between bg-slate-900 p-3 rounded border border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">{{ result.icon }}</span>
+                            <div>
+                                <span class="text-white font-bold text-lg">{{ result.requiredWeight }} g</span>
+                                <span class="text-slate-400 text-sm ml-2">的 {{ result.name }}</span>
+                            </div>
+                        </div>
+                        <div class="text-right text-xs text-slate-500">
+                            附带吃入: 
+                            <span v-if="targetMacro !== 'protein'" class="text-purple-400 ml-1">蛋 {{ result.extraProtein }}g</span>
+                            <span v-if="targetMacro !== 'fat'" class="text-yellow-400 ml-1">脂 {{ result.extraFat }}g</span>
+                            <span v-if="targetMacro !== 'netCarbs'" class="text-blue-400 ml-1">碳 {{ result.extraCarbs }}g</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        // 本地单成分天然食物库 (数据按 100g 熟重/可食部分计)
+        const foodDatabase = [
+            // 蛋白质组
+            { name: "大虾/白灼", icon: "🦐", type: "protein", category: "极瘦快吸", protein: 20, fat: 0.5, netCarbs: 0, tag: "最低热量纯蛋白" },
+            { name: "鸡胸肉(水煮/烤)", icon: "🍗", type: "protein", category: "极瘦快吸", protein: 31, fat: 3.6, netCarbs: 0, tag: "经典氨基酸来源" },
+            { name: "三文鱼(生/烤)", icon: "🍣", type: "protein", category: "高脂功能", protein: 20, fat: 13, netCarbs: 0, tag: "Omega-3 抗炎" },
+            { name: "草饲牛排(瘦)", icon: "🥩", type: "protein", category: "中脂均衡", protein: 26, fat: 8, netCarbs: 0, tag: "富含铁与肌酸" },
+            { name: "全蛋(水煮)", icon: "🥚", type: "protein", category: "中脂均衡", protein: 13, fat: 11, netCarbs: 1, tag: "全谱维生素/胆碱" },
+            
+            // 碳水组
+            { name: "白米饭(熟)", icon: "🍚", type: "carb", category: "靶向快碳", protein: 2.6, fat: 0.3, netCarbs: 28, tag: "训后瞬间推高胰岛素" },
+            { name: "红薯(蒸)", icon: "🍠", type: "carb", category: "温和慢碳", protein: 1.6, fat: 0.1, netCarbs: 17, tag: "平稳储糖" },
+            { name: "西兰花(水煮)", icon: "🥦", type: "carb", category: "极低碳纤维", protein: 2.8, fat: 0.4, netCarbs: 4, tag: "几乎不升糖/高纤" },
+            { name: "羽衣甘蓝", icon: "🥬", type: "carb", category: "极低碳纤维", protein: 3.0, fat: 0.5, netCarbs: 3, tag: "超级食物/含钾极高" },
+            
+            // 脂肪组
+            { name: "牛油果", icon: "🥑", type: "fat", category: "优质纯脂", protein: 2.0, fat: 15, netCarbs: 2, tag: "单不饱和脂肪酸" },
+            { name: "草饲黄油", icon: "🧈", type: "fat", category: "极纯脂肪", protein: 0.8, fat: 81, netCarbs: 0, tag: "极速燃脂/短链脂肪" },
+            { name: "初榨橄榄油", icon: "🫒", type: "fat", category: "液态黄金", protein: 0, fat: 100, netCarbs: 0, tag: "地中海核心/抗氧化" }
+        ];
+
+        createApp({
+            data() {
+                return {
+                    weight: 44.0,
+                    bodyFat: 23.6,
+                    muscle: 17.8,
+                    activity: 1.375,
+                    dietMode: 'keto',
+                    foods: foodDatabase,
+                    activeCategory: 'all',
+                    targetAmount: 30, // 默认要吃30g宏量
+                    targetMacro: 'protein' // 默认选蛋白质
+                }
+            },
+            computed: {
+                // 引擎基础
+                lbm() { return this.weight * (1 - (this.bodyFat / 100)); },
+                bmr() { return 370 + (21.6 * this.lbm); },
+                tdee() { return Math.round(this.bmr * this.activity); },
+                trainCalories() { return this.tdee + 200; },
+                
+                // 计算当前模式的训练日宏量 (仅供展示)
+                trainMacros() {
+                    let carb = this.dietMode === 'keto' ? 45 : Math.round((this.trainCalories * 0.25) / 4);
+                    let protein = Math.round(this.weight * 2.2);
+                    let fat = Math.round((this.trainCalories - carb * 4 - protein * 4) / 9);
+                    return { carb, protein, fat: Math.max(0, fat) };
+                },
+
+                // 食物矩阵筛选器
+                filteredFoods() {
+                    if (this.activeCategory === 'all') return this.foods;
+                    return this.foods.filter(f => f.type === this.activeCategory);
+                },
+
+                // 核心：逆向翻译算法
+                calcResults() {
+                    // 筛选出该宏量指标不为0的食物（比如找蛋白质，就要排除橄榄油）
+                    let relevantFoods = this.foods.filter(f => f[this.targetMacro] > 1 && f.type === this.targetMacro);
+                    
+                    return relevantFoods.map(food => {
+                        // 100g 含有 x 克。目标量 y 克。
+                        // 公式：需要的食物重量 = (y / x) * 100
+                        let multiplier = this.targetAmount / food[this.targetMacro];
+                        let requiredWeight = Math.round(multiplier * 100);
+                        
+                        return {
+                            name: food.name,
+                            icon: food.icon,
+                            requiredWeight: requiredWeight,
+                            // 计算附带吃进去的其他成分
+                            extraProtein: Math.round(food.protein * multiplier * 10) / 10,
+                            extraFat: Math.round(food.fat * multiplier * 10) / 10,
+                            extraCarbs: Math.round(food.netCarbs * multiplier * 10) / 10
+                        };
+                    }).sort((a, b) => a.requiredWeight - b.requiredWeight); // 按需要的重量从小到大排序
+                }
+            },
+            methods: {
+                getBadgeClass(category) {
+                    if(category.includes("极瘦")) return "bg-purple-900 text-purple-300";
+                    if(category.includes("高脂") || category.includes("均衡")) return "bg-yellow-900 text-yellow-300";
+                    if(category.includes("快碳")) return "bg-blue-900 text-blue-300";
+                    if(category.includes("纤维") || category.includes("慢碳")) return "bg-emerald-900 text-emerald-300";
+                    return "bg-slate-700 text-slate-300";
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
