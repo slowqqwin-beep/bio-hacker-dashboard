@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bio-Hacker OS v10.0 - 终极形态</title>
+    <title>Bio-Hacker OS v10.1 - 终极形态(修复地中海模式)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -19,8 +19,8 @@
     <div id="app" class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-end border-b border-slate-700 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.0)</h1>
-                <p class="text-slate-400">引入体型目标阀门与绝对卡路里追踪</p>
+                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.1)</h1>
+                <p class="text-slate-400">引入体型目标阀门与绝对卡路里追踪 (修复地中海算法)</p>
             </div>
         </header>
 
@@ -36,7 +36,14 @@
                 </div>
             </div>
 
-            <div><label class="block text-slate-400 text-[10px] mb-1">宏量流派</label><select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-slate-700 rounded p-1 text-xs"><option value="keto">生酮(Keto)</option><option value="low_carb">低碳(Low-Carb)</option></select></div>
+            <div>
+                <label class="block text-slate-400 text-[10px] mb-1">宏量流派</label>
+                <select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-slate-700 rounded p-1 text-xs">
+                    <option value="keto">生酮(Keto)</option>
+                    <option value="low_carb">低碳(Low-Carb)</option>
+                    <option value="mediterranean">地中海(Med)</option>
+                </select>
+            </div>
             <div><label class="block text-slate-400 text-[10px] mb-1">运动状态</label><div class="flex gap-1"><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="rest" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">休</div></label><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="train" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">练</div></label></div></div>
         </div>
 
@@ -159,8 +166,8 @@
         createApp({
             data() {
                 return {
-                    weight: 44.0, bodyFat: 23.6, activity: 1.375, dietMode: 'keto', dayType: 'train',
-                    bodyGoal: 'cut', // 默认设定为减脂缺口
+                    weight: 44.0, bodyFat: 23.6, activity: 1.375, dietMode: 'low_carb', dayType: 'train',
+                    bodyGoal: 'cut', 
                     foods: [...defaultDatabase],
                     cookingMethods: [ { id: 'boil', name: "💧 水煮", addedFat: 0 }, { id: 'light', name: "🍳 少油", addedFat: 3 } ],
                     meals: [ { name: "第一餐", icon: "🌅", ratio: 0.3 }, { name: "第二餐", icon: "☀️", ratio: 0.4 }, { name: "第三餐", icon: "🌙", ratio: 0.3 } ],
@@ -181,19 +188,28 @@
                 bmr() { return Math.round(370 + (21.6 * (this.weight * (1 - (this.bodyFat / 100))))); },
                 tdee() { return Math.round(this.bmr * this.activity); },
                 
-                // 核心重构：引入 bodyGoal 阀门进行绝对控制
+                // 核心重构：完美加入地中海算法
                 dailyTarget() {
                     let baseCals = this.tdee;
                     if (this.bodyGoal === 'cut') {
-                        // 强制减脂模式：不管动不动，基线直接压到基础代谢 BMR，逼迫烧糖原/脂肪
                         baseCals = this.bmr;
                     }
 
-                    // 如果今天训练，额外给 200 大卡的肌肉修复盈余
                     let finalCals = this.dayType === 'train' ? baseCals + 200 : baseCals;
                     
-                    let carb = this.dietMode === 'keto' ? (this.dayType === 'train' ? 45 : 20) : Math.round((finalCals * 0.25) / 4);
-                    let protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
+                    let carb, protein;
+                    
+                    if (this.dietMode === 'keto') {
+                        carb = this.dayType === 'train' ? 45 : 20;
+                        protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
+                    } else if (this.dietMode === 'low_carb') {
+                        carb = Math.round((finalCals * (this.dayType === 'train' ? 0.25 : 0.20)) / 4);
+                        protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
+                    } else { // mediterranean (地中海)
+                        carb = Math.round((finalCals * (this.dayType === 'train' ? 0.45 : 0.40)) / 4);
+                        protein = Math.round(this.weight * (this.dayType === 'train' ? 1.8 : 1.5));
+                    }
+                    
                     let fat = Math.max(0, Math.round((finalCals - carb*4 - protein*4)/9));
                     
                     return { calories: finalCals, carb, protein, fat };
@@ -208,7 +224,6 @@
                     return { carb: Math.round(total.carb), protein: Math.round(total.protein), fat: Math.round(total.fat) };
                 },
 
-                // 核心修复：真实计算出吃进去的总卡路里
                 totalConsumedCals() {
                     return Math.round((this.totalConsumed.carb * 4) + (this.totalConsumed.protein * 4) + (this.totalConsumed.fat * 9));
                 },
