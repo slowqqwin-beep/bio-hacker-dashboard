@@ -3,202 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bio-Hacker 智能配餐引擎 v7.0</title>
+    <title>Bio-Hacker OS v8.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .radio-btn input[type="radio"]:checked + div { background-color: #10b981; border-color: #059669; color: white; }
-        .meal-block { transition: all 0.3s ease; }
-        .meal-block:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1); border-color: #10b981; }
     </style>
 </head>
 <body class="p-4 md:p-6">
     <div id="app" class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-end border-b border-slate-700 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v7.0)</h1>
-                <p class="text-slate-400">引入一日三餐自动计算与食材混搭引擎</p>
+                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v8.0)</h1>
+                <p class="text-slate-400">底层基准线回归 + 自定义食物审判模块</p>
             </div>
         </header>
 
-        <!-- 顶部：全局状态控制台 -->
-        <div class="glass-card p-5 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+        <div class="glass-card p-5 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
             <div>
                 <label class="block text-slate-400 text-xs mb-1">体重(kg)</label>
                 <input type="number" v-model.number="weight" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 focus:outline-none">
             </div>
             <div>
-                <label class="block text-slate-400 text-xs mb-1">饮食架构 (宏量算法)</label>
+                <label class="block text-slate-400 text-xs mb-1">体脂率(%)</label>
+                <input type="number" v-model.number="bodyFat" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-slate-400 text-xs mb-1">骨骼肌(kg)</label>
+                <input type="number" v-model.number="muscle" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-slate-400 text-xs mb-1">饮食架构 (算法流派)</label>
                 <select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-slate-700 rounded p-1.5 focus:outline-none text-sm">
-                    <option value="keto">🥩 靶向生酮 (Keto/TKD)</option>
+                    <option value="keto">🥩 靶向生酮 (Keto)</option>
                     <option value="low_carb">🥑 温和低碳 (Low-Carb)</option>
                     <option value="mediterranean">🥗 地中海抗炎 (Med)</option>
                 </select>
             </div>
-            <div class="md:col-span-2">
-                <label class="block text-slate-400 text-xs mb-1">今日日程状态 (决定热量盈亏)</label>
-                <div class="flex gap-2">
-                    <label class="cursor-pointer flex-1 radio-btn text-sm">
+            <div>
+                <label class="block text-slate-400 text-xs mb-1">今日日程</label>
+                <div class="flex gap-1">
+                    <label class="cursor-pointer flex-1 radio-btn text-xs">
                         <input type="radio" value="rest" v-model="dayType" class="hidden">
-                        <div class="text-center py-1.5 rounded border border-slate-700 bg-slate-900 text-slate-400">🧘‍♀️ 休息日 (维持)</div>
+                        <div class="text-center py-1.5 rounded border border-slate-700 bg-slate-900 text-slate-400">🧘‍♀️ 休息</div>
                     </label>
-                    <label class="cursor-pointer flex-1 radio-btn text-sm">
+                    <label class="cursor-pointer flex-1 radio-btn text-xs">
                         <input type="radio" value="train" v-model="dayType" class="hidden">
-                        <div class="text-center py-1.5 rounded border border-slate-700 bg-slate-900 text-slate-400">🏋️‍♀️ 训练日 (+200kcal)</div>
+                        <div class="text-center py-1.5 rounded border border-slate-700 bg-slate-900 text-slate-400">🏋️‍♀️ 训练</div>
                     </label>
                 </div>
             </div>
         </div>
 
-        <!-- 核心新增：一日三餐自动化拼图引擎 -->
-        <div class="glass-card p-6 rounded-xl border-l-4 border-l-blue-500">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-bold text-blue-300">🍽️ 智能配餐生成器 (Meal Matrix)</h2>
-                    <p class="text-sm text-slate-400 mt-1">系统已将今日目标宏量按比例分配（早25% / 中40% / 晚35%）。选取食材，系统自动计算克数。</p>
+        <div class="glass-card p-6 rounded-xl border-l-4 border-l-blue-500 relative overflow-hidden">
+            <h2 class="text-xl font-bold text-white mb-4">📊 今日能量基准线与宏量上限</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-center">
+                    <div class="text-slate-400 text-xs mb-1">基础代谢(BMR)</div>
+                    <div class="text-xl font-bold text-white">{{ bmr }} <span class="text-xs font-normal">kcal</span></div>
                 </div>
-                <button @click="randomizeAllMeals" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-colors flex items-center gap-2">
-                    🎲 一键随机生成全天餐饮
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- 遍历生成三餐卡片 -->
-                <div v-for="(meal, index) in meals" :key="index" class="bg-slate-800 p-5 rounded-xl border border-slate-700 meal-block relative">
-                    <div class="absolute top-0 right-0 bg-slate-700 text-xs px-2 py-1 rounded-bl-lg text-slate-300">{{ meal.ratio * 100 }}% 热量占比</div>
-                    <h3 class="text-lg font-bold text-white mb-3">{{ meal.icon }} {{ meal.name }}</h3>
-                    
-                    <!-- 该餐的宏量目标 -->
-                    <div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs">
-                        <div class="bg-slate-900 p-1.5 rounded border border-slate-800"><span class="block text-blue-400 font-bold">碳水</span>{{ getMealTarget(meal.ratio).carb }}g</div>
-                        <div class="bg-slate-900 p-1.5 rounded border border-slate-800"><span class="block text-purple-400 font-bold">蛋白</span>{{ getMealTarget(meal.ratio).protein }}g</div>
-                        <div class="bg-slate-900 p-1.5 rounded border border-slate-800"><span class="block text-yellow-400 font-bold">脂肪</span>{{ getMealTarget(meal.ratio).fat }}g</div>
-                    </div>
-
-                    <!-- 4个下拉选项矩阵 -->
-                    <div class="space-y-3 mb-5">
-                        <div>
-                            <label class="block text-[10px] text-purple-400 mb-1 uppercase tracking-wider font-bold">蛋白质源</label>
-                            <select v-model="mealSelections[index].proteinId" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 text-sm focus:border-purple-500 focus:outline-none">
-                                <option v-for="f in foods.filter(f=>f.type==='protein')" :value="f.id">{{ f.icon }} {{ f.name }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-blue-400 mb-1 uppercase tracking-wider font-bold">碳水源</label>
-                            <select v-model="mealSelections[index].carbId" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 text-sm focus:border-blue-500 focus:outline-none">
-                                <option value="none">🚫 无 (断碳)</option>
-                                <option v-for="f in foods.filter(f=>f.type==='carb')" :value="f.id">{{ f.icon }} {{ f.name }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-yellow-400 mb-1 uppercase tracking-wider font-bold">脂肪/辅料补充</label>
-                            <select v-model="mealSelections[index].fatId" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 text-sm focus:border-yellow-500 focus:outline-none">
-                                <option value="none">🚫 无 (肉类脂肪已够)</option>
-                                <option v-for="f in foods.filter(f=>f.type==='fat')" :value="f.id">{{ f.icon }} {{ f.name }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-emerald-400 mb-1 uppercase tracking-wider font-bold">烹饪方式 (影响隐藏油脂)</label>
-                            <select v-model="mealSelections[index].cookingId" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1.5 text-sm focus:border-emerald-500 focus:outline-none">
-                                <option v-for="c in cookingMethods" :value="c.id">{{ c.name }} (额外脂: {{ c.addedFat }}g)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- 引擎计算输出结果 -->
-                    <div class="p-3 bg-slate-900 rounded-lg border border-slate-700">
-                        <div class="text-xs text-slate-400 mb-2 border-b border-slate-800 pb-1">⚡ 精确备餐克数：</div>
-                        <ul class="space-y-1.5">
-                            <template v-for="result in calculateMealPlan(index)">
-                                <li v-if="result.weight > 0" class="flex justify-between items-center text-sm">
-                                    <span class="text-white">{{ result.icon }} {{ result.name }}</span>
-                                    <span class="font-bold" :class="result.color">{{ result.weight }} g</span>
-                                </li>
-                            </template>
-                        </ul>
-                        <!-- 果糖警告 -->
-                        <div v-if="getFructose(index) >= 15" class="mt-2 text-[10px] text-rose-400 bg-rose-900/30 p-1 rounded font-bold">
-                            ⚠️ 注意：此餐果糖达 {{ getFructose(index) }}g，注意肝脏压力。
-                        </div>
-                    </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 text-center">
+                    <div class="text-emerald-400 text-xs mb-1">今日总耗能(TDEE)</div>
+                    <div class="text-xl font-bold text-emerald-400">{{ dailyTarget.calories }} <span class="text-xs font-normal">kcal</span></div>
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-blue-900 text-center shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+                    <div class="text-blue-400 text-xs mb-1">碳水上限</div>
+                    <div class="text-xl font-bold text-white">{{ dailyTarget.carb }} <span class="text-xs font-normal">g</span></div>
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-purple-900 text-center">
+                    <div class="text-purple-400 text-xs mb-1">蛋白目标</div>
+                    <div class="text-xl font-bold text-white">{{ dailyTarget.protein }} <span class="text-xs font-normal">g</span></div>
+                </div>
+                <div class="bg-slate-800 p-3 rounded-lg border border-yellow-900 text-center">
+                    <div class="text-yellow-400 text-xs mb-1">脂肪上限</div>
+                    <div class="text-xl font-bold text-white">{{ dailyTarget.fat }} <span class="text-xs font-normal">g</span></div>
                 </div>
             </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <div class="glass-card p-6 rounded-xl">
+                <h2 class="text-xl font-bold text-blue-300 mb-4">🍽️ 主食矩阵 (Meal Matrix)</h2>
+                <div class="space-y-4">
+                    <div v-for="(meal, index) in meals" :key="index" class="bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-blue-500 transition-colors">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-white text-sm">{{ meal.icon }} {{ meal.name }} ({{ meal.ratio * 100 }}%)</h3>
+                            <div class="text-[10px] text-slate-400">
+                                碳{{ getMealTarget(meal.ratio).carb }}g | 蛋{{ getMealTarget(meal.ratio).protein }}g | 脂{{ getMealTarget(meal.ratio).fat }}g
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <select v-model="mealSelections[index].proteinId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                                <option v-for="f in foods.filter(f=>f.type==='protein')" :value="f.id">{{ f.icon }}{{ f.name }}</option>
+                            </select>
+                            <select v-model="mealSelections[index].carbId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                                <option value="none">🚫 无(断碳)</option>
+                                <option v-for="f in foods.filter(f=>f.type==='carb')" :value="f.id">{{ f.icon }}{{ f.name }}</option>
+                            </select>
+                            <select v-model="mealSelections[index].fatId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                                <option value="none">🚫 无(肉脂够)</option>
+                                <option v-for="f in foods.filter(f=>f.type==='fat')" :value="f.id">{{ f.icon }}{{ f.name }}</option>
+                            </select>
+                            <select v-model="mealSelections[index].cookingId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs text-emerald-400">
+                                <option v-for="c in cookingMethods" :value="c.id">{{ c.name }}</option>
+                            </select>
+                        </div>
+                        <div class="p-2 bg-slate-900 rounded border border-slate-700 text-xs">
+                            <span v-for="result in calculateMealPlan(index)" v-show="result.weight > 0" class="inline-block mr-3 mb-1">
+                                <span class="text-white">{{ result.name }}:</span> <span class="font-bold" :class="result.color">{{ result.weight }}g</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 rounded-xl border-l-4 border-l-rose-500">
+                <h2 class="text-xl font-bold text-rose-300 mb-2">🔍 自定义食物审判官</h2>
+                <p class="text-xs text-slate-400 mb-4">输入包装袋背后的营养成分(每100g)，系统自动判定你能吃多少。</p>
+                
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-4">
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="col-span-2">
+                            <label class="block text-slate-400 text-xs mb-1">你想吃什么？</label>
+                            <input type="text" v-model="customFood.name" placeholder="例如：黑巧克力 / 麦片 / 芝士蛋糕" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 text-sm focus:border-rose-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-blue-400 text-xs mb-1">碳水 (g/100g)</label>
+                            <input type="number" v-model.number="customFood.carb" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-yellow-400 text-xs mb-1">脂肪 (g/100g)</label>
+                            <input type="number" v-model.number="customFood.fat" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-purple-400 text-xs mb-1">蛋白质 (g/100g)</label>
+                            <input type="number" v-model.number="customFood.protein" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl border" :class="evaluation.borderColor + ' ' + evaluation.bgColor">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">{{ evaluation.icon }}</span>
+                        <h3 class="font-bold" :class="evaluation.textColor">系统裁决结果：{{ customFood.name || '未知食物' }}</h3>
+                    </div>
+                    <p class="text-sm text-slate-300 mb-3">{{ evaluation.message }}</p>
+                    
+                    <div v-if="evaluation.maxAllowed > 0" class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <div class="text-xs text-slate-400 mb-1">基于你今日的宏量余额计算，你今天的**绝对食用上限**为：</div>
+                        <div class="text-3xl font-black text-white text-center">{{ evaluation.maxAllowed }} <span class="text-sm font-normal text-slate-500">克 (g)</span></div>
+                        <div class="text-[10px] text-slate-500 text-center mt-1">瓶颈卡在: {{ evaluation.bottleneck }}限制</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
         const { createApp } = Vue;
 
-        // 给每个食物加上唯一ID以便绑定
         const foodDatabase = [
-            { id: 'p1', name: "大虾(白灼)", icon: "🦐", type: "protein", protein: 20, fat: 0.5, netCarbs: 0, fructose: 0 },
-            { id: 'p2', name: "鸡胸肉(熟)", icon: "🍗", type: "protein", protein: 31, fat: 3.6, netCarbs: 0, fructose: 0 },
-            { id: 'p3', name: "三文鱼(熟)", icon: "🍣", type: "protein", protein: 20, fat: 13, netCarbs: 0, fructose: 0 },
-            { id: 'p4', name: "瘦牛排(熟)", icon: "🥩", type: "protein", protein: 26, fat: 8, netCarbs: 0, fructose: 0 },
-            { id: 'p5', name: "全蛋(水煮)", icon: "🥚", type: "protein", protein: 13, fat: 11, netCarbs: 1, fructose: 0 },
-            
-            { id: 'c1', name: "白米饭(熟)", icon: "🍚", type: "carb", protein: 2.6, fat: 0.3, netCarbs: 28, fructose: 0 },
-            { id: 'c2', name: "红薯(蒸熟)", icon: "🍠", type: "carb", protein: 1.6, fat: 0.1, netCarbs: 17, fructose: 0.5 },
-            { id: 'c3', name: "蓝莓(鲜)", icon: "🫐", type: "carb", protein: 0.7, fat: 0.3, netCarbs: 12, fructose: 5.0 },
-            { id: 'c4', name: "西兰花(熟)", icon: "🥦", type: "carb", protein: 2.8, fat: 0.4, netCarbs: 4, fructose: 0.7 },
-            
-            { id: 'f1', name: "牛油果", icon: "🥑", type: "fat", protein: 2.0, fat: 15, netCarbs: 2, fructose: 0.1 },
-            { id: 'f2', name: "核桃(生)", icon: "🌰", type: "fat", protein: 15.2, fat: 65, netCarbs: 7, fructose: 0 },
-            { id: 'f3', name: "黄油/奶酪", icon: "🧀", type: "fat", protein: 0.8, fat: 81, netCarbs: 0, fructose: 0 }
+            { id: 'p1', name: "大虾", icon: "🦐", type: "protein", protein: 20, fat: 0.5, netCarbs: 0 },
+            { id: 'p2', name: "鸡胸", icon: "🍗", type: "protein", protein: 31, fat: 3.6, netCarbs: 0 },
+            { id: 'p3', name: "三文鱼", icon: "🍣", type: "protein", protein: 20, fat: 13, netCarbs: 0 },
+            { id: 'p4', name: "瘦牛排", icon: "🥩", type: "protein", protein: 26, fat: 8, netCarbs: 0 },
+            { id: 'p5', name: "全蛋", icon: "🥚", type: "protein", protein: 13, fat: 11, netCarbs: 1 },
+            { id: 'c1', name: "米饭", icon: "🍚", type: "carb", protein: 2.6, fat: 0.3, netCarbs: 28 },
+            { id: 'c2', name: "红薯", icon: "🍠", type: "carb", protein: 1.6, fat: 0.1, netCarbs: 17 },
+            { id: 'c4', name: "西兰花", icon: "🥦", type: "carb", protein: 2.8, fat: 0.4, netCarbs: 4 },
+            { id: 'f1', name: "牛油果", icon: "🥑", type: "fat", protein: 2.0, fat: 15, netCarbs: 2 },
+            { id: 'f2', name: "核桃", icon: "🌰", type: "fat", protein: 15.2, fat: 65, netCarbs: 7 },
+            { id: 'f3', name: "黄油", icon: "🧈", type: "fat", protein: 0.8, fat: 81, netCarbs: 0 }
         ];
 
         const cookingMatrix = [
-            { id: 'boil', name: "💧 清蒸/水煮/生食", addedFat: 0 },
-            { id: 'light', name: "🍳 极简少油煎", addedFat: 3 },
-            { id: 'fry', name: "🔥 大火快炒", addedFat: 6 },
-            { id: 'deep', name: "🧈 黄油香煎", addedFat: 10 }
+            { id: 'boil', name: "💧 水煮", addedFat: 0 },
+            { id: 'light', name: "🍳 极少油", addedFat: 3 },
+            { id: 'fry', name: "🔥 大火炒", addedFat: 6 }
         ];
 
         createApp({
             data() {
                 return {
-                    weight: 44.0, bodyFat: 23.6, activity: 1.375,
+                    weight: 44.0, bodyFat: 23.6, muscle: 17.8, activity: 1.375,
                     dietMode: 'keto', dayType: 'train',
                     foods: foodDatabase,
                     cookingMethods: cookingMatrix,
                     meals: [
-                        { name: "唤醒早餐", icon: "🌅", ratio: 0.25 },
-                        { name: "高能午餐", icon: "☀️", ratio: 0.40 },
-                        { name: "修复晚餐", icon: "🌙", ratio: 0.35 }
+                        { name: "第一餐", icon: "🌅", ratio: 0.25 },
+                        { name: "第二餐", icon: "☀️", ratio: 0.40 },
+                        { name: "第三餐", icon: "🌙", ratio: 0.35 }
                     ],
-                    // 初始化三餐的选择
                     mealSelections: [
-                        { proteinId: 'p5', carbId: 'c4', fatId: 'f1', cookingId: 'boil' }, // 早
-                        { proteinId: 'p2', carbId: 'c1', fatId: 'none', cookingId: 'light' }, // 中
-                        { proteinId: 'p3', carbId: 'none', fatId: 'none', cookingId: 'light' } // 晚
-                    ]
+                        { proteinId: 'p5', carbId: 'c4', fatId: 'f1', cookingId: 'boil' },
+                        { proteinId: 'p2', carbId: 'c1', fatId: 'none', cookingId: 'light' },
+                        { proteinId: 'p3', carbId: 'none', fatId: 'none', cookingId: 'light' }
+                    ],
+                    // 自定义食物输入区
+                    customFood: {
+                        name: '黑巧克力(85%)',
+                        carb: 15,
+                        protein: 10,
+                        fat: 45
+                    }
                 }
             },
             computed: {
-                // 计算全天总宏量 (逻辑复用 v6)
-                tdee() { return Math.round((370 + (21.6 * (this.weight * (1 - (this.bodyFat / 100))))) * this.activity); },
+                // 引擎：计算精确参数
+                lbm() { return this.weight * (1 - (this.bodyFat / 100)); },
+                bmr() { return Math.round(370 + (21.6 * this.lbm)); },
+                
+                // 引擎：计算每日全量指标
                 dailyTarget() {
-                    let cals = this.dayType === 'train' ? this.tdee + 200 : this.tdee;
+                    let tdee = Math.round(this.bmr * this.activity);
+                    let cals = this.dayType === 'train' ? tdee + 200 : tdee;
                     let carb, protein;
+                    
                     if (this.dietMode === 'keto') {
                         carb = this.dayType === 'train' ? 45 : 20;
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
                     } else if (this.dietMode === 'low_carb') {
                         carb = Math.round((cals * (this.dayType === 'train' ? 0.25 : 0.20)) / 4);
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
-                    } else { // Mediterranean
+                    } else { // Med
                         carb = Math.round((cals * (this.dayType === 'train' ? 0.45 : 0.40)) / 4);
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 1.8 : 1.5));
                     }
                     let fat = Math.max(0, Math.round((cals - (carb * 4) - (protein * 4)) / 9));
-                    return { carb, protein, fat };
+                    return { calories: cals, carb, protein, fat };
+                },
+
+                // 核心算法：自定义食物审判官
+                evaluation() {
+                    // 防呆设计：如果没输入数据
+                    if(this.customFood.carb === 0 && this.customFood.fat === 0 && this.customFood.protein === 0) {
+                        return { icon: "❓", message: "请输入营养成分表数据以获取裁决", borderColor: "border-slate-600", bgColor: "bg-slate-800", textColor: "text-slate-300", maxAllowed: 0 };
+                    }
+
+                    // 基于总宏量计算各项能吃的最大克数
+                    let maxByCarb = this.customFood.carb > 0 ? (this.dailyTarget.carb / this.customFood.carb) * 100 : 9999;
+                    let maxByFat = this.customFood.fat > 0 ? (this.dailyTarget.fat / this.customFood.fat) * 100 : 9999;
+                    let maxByProtein = this.customFood.protein > 0 ? (this.dailyTarget.protein / this.customFood.protein) * 100 : 9999;
+                    
+                    // 找到瓶颈（短板）
+                    let maxAllowed = Math.floor(Math.min(maxByCarb, maxByFat, maxByProtein));
+                    let bottleneck = maxAllowed === Math.floor(maxByCarb) ? '碳水' : (maxAllowed === Math.floor(maxByFat) ? '脂肪' : '蛋白质');
+
+                    // 审判逻辑判定
+                    if (maxAllowed < 30) {
+                        return {
+                            icon: "🚫",
+                            message: "极度危险！这款食物的成分比例与你当前的饮食模式严重冲突。随便吃两口就会直接拉爆你今天的" + bottleneck + "额度！",
+                            borderColor: "border-rose-500", bgColor: "bg-rose-900/20", textColor: "text-rose-400",
+                            maxAllowed: maxAllowed, bottleneck: bottleneck
+                        };
+                    } else if (maxAllowed >= 30 && maxAllowed < 150) {
+                        return {
+                            icon: "⚠️",
+                            message: "可以稍微解馋，但必须严格称重控制。如果吃太多，会占据你今天大部分的" + bottleneck + "配额，导致正餐无东西可吃。",
+                            borderColor: "border-orange-500", bgColor: "bg-orange-900/20", textColor: "text-orange-400",
+                            maxAllowed: maxAllowed, bottleneck: bottleneck
+                        };
+                    } else {
+                        return {
+                            icon: "✅",
+                            message: "完美契合！这款食物的宏量分布对你当前的饮食策略非常友好，你可以放心将它纳入今日的配餐中。",
+                            borderColor: "border-emerald-500", bgColor: "bg-emerald-900/20", textColor: "text-emerald-400",
+                            maxAllowed: maxAllowed, bottleneck: bottleneck
+                        };
+                    }
                 }
             },
             methods: {
-                // 按比例分配单餐目标
                 getMealTarget(ratio) {
                     return {
                         carb: Math.round(this.dailyTarget.carb * ratio),
@@ -206,7 +286,6 @@
                         fat: Math.round(this.dailyTarget.fat * ratio)
                     };
                 },
-                // 核心减法引擎：计算食物克数
                 calculateMealPlan(mealIndex) {
                     let target = this.getMealTarget(this.meals[mealIndex].ratio);
                     let sel = this.mealSelections[mealIndex];
@@ -217,69 +296,30 @@
                     let fFood = this.foods.find(f => f.id === sel.fatId);
                     let cook = this.cookingMethods.find(c => c.id === sel.cookingId);
 
-                    // 1. 满足蛋白质
                     let pWeight = 0, pFat = 0, pCarb = 0;
                     if (pFood) {
                         pWeight = Math.round((target.protein / pFood.protein) * 100);
-                        pFat = (pWeight / 100) * pFood.fat;
-                        pCarb = (pWeight / 100) * pFood.netCarbs;
-                        result.push({ name: pFood.name, icon: pFood.icon, weight: pWeight, color: 'text-purple-400' });
+                        pFat = (pWeight / 100) * pFood.fat; pCarb = (pWeight / 100) * pFood.netCarbs;
+                        result.push({ name: pFood.name, weight: pWeight, color: 'text-purple-400' });
                     }
 
-                    // 2. 满足碳水 (扣除肉里可能有的微量碳水)
                     let cWeight = 0, cFat = 0;
                     if (cFood) {
-                        let remainingCarb = Math.max(0, target.carb - pCarb);
-                        cWeight = Math.round((remainingCarb / cFood.netCarbs) * 100);
-                        if(cWeight > 0) {
-                            cFat = (cWeight / 100) * cFood.fat;
-                            result.push({ name: cFood.name, icon: cFood.icon, weight: cWeight, color: 'text-blue-400' });
-                        }
+                        cWeight = Math.round((Math.max(0, target.carb - pCarb) / cFood.netCarbs) * 100);
+                        if(cWeight > 0) { cFat = (cWeight / 100) * cFood.fat; result.push({ name: cFood.name, weight: cWeight, color: 'text-blue-400' }); }
                     }
 
-                    // 3. 记录烹饪油脂
                     let cookFat = cook ? cook.addedFat : 0;
-                    if (cookFat > 0) {
-                        result.push({ name: cook.name.split(' ')[1] + "用油", icon: cook.name.split(' ')[0], weight: cookFat, color: 'text-emerald-400' });
-                    }
+                    if (cookFat > 0) { result.push({ name: cook.name.split(' ')[1], weight: cookFat, color: 'text-emerald-400' }); }
 
-                    // 4. 填补脂肪空缺 (总脂肪目标 - 肉脂肪 - 碳水脂肪 - 烹饪用油)
                     if (fFood) {
                         let remainingFat = target.fat - pFat - cFat - cookFat;
                         if (remainingFat > 0) {
                             let fWeight = Math.round((remainingFat / fFood.fat) * 100);
-                            if(fWeight > 0) {
-                                result.push({ name: fFood.name, icon: fFood.icon, weight: fWeight, color: 'text-yellow-400' });
-                            }
+                            if(fWeight > 0) result.push({ name: fFood.name, weight: fWeight, color: 'text-yellow-400' });
                         }
                     }
                     return result;
-                },
-                // 提取单餐果糖总额
-                getFructose(mealIndex) {
-                    let sel = this.mealSelections[mealIndex];
-                    let total = 0;
-                    // 只需查碳水源（目前果蔬碳水源主要含果糖）
-                    let cFood = this.foods.find(f => f.id === sel.carbId);
-                    if (cFood) {
-                        let targetCarb = this.getMealTarget(this.meals[mealIndex].ratio).carb;
-                        let cWeight = (targetCarb / cFood.netCarbs) * 100;
-                        total += (cWeight / 100) * cFood.fructose;
-                    }
-                    return Math.round(total * 10) / 10;
-                },
-                // 摇骰子功能
-                randomizeAllMeals() {
-                    const pList = this.foods.filter(f => f.type === 'protein');
-                    const cList = this.foods.filter(f => f.type === 'carb');
-                    const fList = this.foods.filter(f => f.type === 'fat');
-                    
-                    this.mealSelections.forEach(meal => {
-                        meal.proteinId = pList[Math.floor(Math.random() * pList.length)].id;
-                        meal.carbId = Math.random() > 0.3 ? cList[Math.floor(Math.random() * cList.length)].id : 'none'; // 30%概率无碳水
-                        meal.fatId = Math.random() > 0.5 ? fList[Math.floor(Math.random() * fList.length)].id : 'none';
-                        meal.cookingId = this.cookingMethods[Math.floor(Math.random() * this.cookingMethods.length)].id;
-                    });
                 }
             }
         }).mount('#app');
