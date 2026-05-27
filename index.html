@@ -3,37 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bio-Hacker OS v9.0 - 动态重平衡版</title>
+    <title>Bio-Hacker OS v10.0 - 终极形态</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .radio-btn input[type="radio"]:checked + div { background-color: #10b981; border-color: #059669; color: white; }
+        .radio-btn input[type="radio"]:checked + div { background-color: #10b981; border-color: #059669; color: white; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
+        .goal-btn input[type="radio"]:checked + div.cut { background-color: #f43f5e; border-color: #e11d48; color: white; }
+        .goal-btn input[type="radio"]:checked + div.maintain { background-color: #3b82f6; border-color: #2563eb; color: white; }
+        .goal-btn input[type="radio"]:checked + div.bulk { background-color: #10b981; border-color: #059669; color: white; }
     </style>
 </head>
 <body class="p-4 md:p-6">
     <div id="app" class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-end border-b border-slate-700 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v9.0)</h1>
-                <p class="text-slate-400">全局动态重平衡与自定义食物数据库</p>
+                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.0)</h1>
+                <p class="text-slate-400">引入体型目标阀门与绝对卡路里追踪</p>
             </div>
         </header>
 
-        <div class="glass-card p-4 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-2 md:grid-cols-5 gap-3 items-center">
+        <div class="glass-card p-4 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
             <div><label class="block text-slate-400 text-[10px] mb-1">体重(kg)</label><input type="number" v-model.number="weight" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
             <div><label class="block text-slate-400 text-[10px] mb-1">体脂率(%)</label><input type="number" v-model.number="bodyFat" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
-            <div><label class="block text-slate-400 text-[10px] mb-1">算法流派</label><select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-slate-700 rounded p-1 text-xs"><option value="keto">生酮(Keto)</option><option value="low_carb">低碳(Low-Carb)</option></select></div>
-            <div class="col-span-2"><label class="block text-slate-400 text-[10px] mb-1">日程状态</label><div class="flex gap-1"><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="rest" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">休息日</div></label><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="train" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">训练日 (+200kcal)</div></label></div></div>
+            
+            <div class="md:col-span-2">
+                <label class="block text-rose-400 font-bold text-[10px] mb-1">🎯 核心体型目标 (决定热量基线)</label>
+                <div class="flex gap-1">
+                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="cut" v-model="bodyGoal" class="hidden"><div class="cut text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🔥 减脂缺口(压至BMR)</div></label>
+                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="maintain" v-model="bodyGoal" class="hidden"><div class="maintain text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">⚖️ 维持(TDEE)</div></label>
+                </div>
+            </div>
+
+            <div><label class="block text-slate-400 text-[10px] mb-1">宏量流派</label><select v-model="dietMode" class="w-full bg-slate-900 text-emerald-300 border border-slate-700 rounded p-1 text-xs"><option value="keto">生酮(Keto)</option><option value="low_carb">低碳(Low-Carb)</option></select></div>
+            <div><label class="block text-slate-400 text-[10px] mb-1">运动状态</label><div class="flex gap-1"><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="rest" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">休</div></label><label class="cursor-pointer flex-1 radio-btn"><input type="radio" value="train" v-model="dayType" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">练</div></label></div></div>
         </div>
 
         <div class="glass-card p-5 rounded-xl border-l-4 border-l-blue-500 relative overflow-hidden">
             <h2 class="text-lg font-bold text-white mb-3">📊 实时动态账本 (Live Ledger)</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
-                    <div class="text-slate-400 text-xs mb-1">总耗能 (TDEE)</div>
-                    <div class="text-xl font-bold text-white">{{ dailyTarget.calories }} <span class="text-xs">kcal</span></div>
+                
+                <div class="bg-slate-800 p-3 rounded-lg border flex flex-col justify-between" :class="totalConsumedCals > dailyTarget.calories ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'border-slate-700'">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-white text-xs font-bold">已配总热量</span>
+                        <span class="text-[10px] text-slate-400">目标上限: {{ dailyTarget.calories }}</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div class="text-2xl font-black" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-white'">{{ totalConsumedCals }}<span class="text-xs font-normal text-slate-400 ml-1">kcal</span></div>
+                        <div class="text-xs" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-slate-400'">
+                            {{ totalConsumedCals > dailyTarget.calories ? '⚠️ 爆卡' : '安全' }}
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="bg-slate-800 p-3 rounded-lg border border-blue-900 flex flex-col justify-between">
@@ -115,12 +136,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="p-4 rounded-xl border mb-4" :class="evaluation.borderColor + ' ' + evaluation.bgColor">
-                    <div class="flex items-center gap-2 mb-2"><span class="text-xl">{{ evaluation.icon }}</span><h3 class="font-bold text-sm" :class="evaluation.textColor">裁决：{{ customFood.name || '未知' }}</h3></div>
-                    <p class="text-xs text-slate-300">{{ evaluation.message }}</p>
-                </div>
-
                 <button @click="saveFoodToDB" :disabled="!customFood.name" class="w-full bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-colors flex justify-center items-center gap-2">
                     💾 存入我的专属食物库
                 </button>
@@ -145,16 +160,17 @@
             data() {
                 return {
                     weight: 44.0, bodyFat: 23.6, activity: 1.375, dietMode: 'keto', dayType: 'train',
+                    bodyGoal: 'cut', // 默认设定为减脂缺口
                     foods: [...defaultDatabase],
                     cookingMethods: [ { id: 'boil', name: "💧 水煮", addedFat: 0 }, { id: 'light', name: "🍳 少油", addedFat: 3 } ],
-                    meals: [ { name: "第一餐", icon: "🌅", ratio: 0.25 }, { name: "第二餐", icon: "☀️", ratio: 0.40 }, { name: "第三餐", icon: "🌙", ratio: 0.35 } ],
+                    meals: [ { name: "第一餐", icon: "🌅", ratio: 0.3 }, { name: "第二餐", icon: "☀️", ratio: 0.4 }, { name: "第三餐", icon: "🌙", ratio: 0.3 } ],
                     mealSelections: [
                         { proteinId: 'p2', carbId: 'c4', fatId: 'f1', cookingId: 'boil' },
-                        { proteinId: 'p2', carbId: 'c1', fatId: 'none', cookingId: 'light' },
+                        { proteinId: 'p2', carbId: 'none', fatId: 'none', cookingId: 'light' },
                         { proteinId: 'p3', carbId: 'none', fatId: 'none', cookingId: 'light' }
                     ],
                     customFood: { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' },
-                    mealActuals: [null, null, null] // 用于缓存真实消耗
+                    mealActuals: [null, null, null]
                 }
             },
             computed: {
@@ -163,53 +179,53 @@
                 availableFats() { return this.foods.filter(f=>f.type==='fat'); },
 
                 bmr() { return Math.round(370 + (21.6 * (this.weight * (1 - (this.bodyFat / 100))))); },
+                tdee() { return Math.round(this.bmr * this.activity); },
+                
+                // 核心重构：引入 bodyGoal 阀门进行绝对控制
                 dailyTarget() {
-                    let cals = this.dayType === 'train' ? Math.round(this.bmr * this.activity) + 200 : Math.round(this.bmr * this.activity);
-                    let carb = this.dietMode === 'keto' ? (this.dayType === 'train' ? 45 : 20) : Math.round((cals * 0.25) / 4);
+                    let baseCals = this.tdee;
+                    if (this.bodyGoal === 'cut') {
+                        // 强制减脂模式：不管动不动，基线直接压到基础代谢 BMR，逼迫烧糖原/脂肪
+                        baseCals = this.bmr;
+                    }
+
+                    // 如果今天训练，额外给 200 大卡的肌肉修复盈余
+                    let finalCals = this.dayType === 'train' ? baseCals + 200 : baseCals;
+                    
+                    let carb = this.dietMode === 'keto' ? (this.dayType === 'train' ? 45 : 20) : Math.round((finalCals * 0.25) / 4);
                     let protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
-                    return { calories: cals, carb, protein, fat: Math.max(0, Math.round((cals - carb*4 - protein*4)/9)) };
+                    let fat = Math.max(0, Math.round((finalCals - carb*4 - protein*4)/9));
+                    
+                    return { calories: finalCals, carb, protein, fat };
                 },
 
-                // 核心更新：实时计算总消耗
                 totalConsumed() {
                     let total = { carb: 0, protein: 0, fat: 0 };
-                    // 强制调用一下计算，更新实际消耗缓存
                     this.meals.forEach((_, i) => this.calculateMealPlan(i));
-                    
                     this.mealActuals.forEach(actual => {
-                        if(actual) {
-                            total.carb += actual.carb;
-                            total.protein += actual.protein;
-                            total.fat += actual.fat;
-                        }
+                        if(actual) { total.carb += actual.carb; total.protein += actual.protein; total.fat += actual.fat; }
                     });
                     return { carb: Math.round(total.carb), protein: Math.round(total.protein), fat: Math.round(total.fat) };
                 },
 
-                // 核心更新：实时结余计算
+                // 核心修复：真实计算出吃进去的总卡路里
+                totalConsumedCals() {
+                    return Math.round((this.totalConsumed.carb * 4) + (this.totalConsumed.protein * 4) + (this.totalConsumed.fat * 9));
+                },
+
                 remainingMacros() {
                     return {
                         carb: this.dailyTarget.carb - this.totalConsumed.carb,
                         protein: this.dailyTarget.protein - this.totalConsumed.protein,
                         fat: this.dailyTarget.fat - this.totalConsumed.fat
                     };
-                },
-
-                evaluation() {
-                    if(!this.customFood.name) return { icon: "❓", message: "输入成分开始裁决", borderColor: "border-slate-600", bgColor: "bg-slate-800", textColor: "text-slate-300" };
-                    return { icon: "✅", message: "点击下方按钮存入库中，即可在左侧选择配餐。", borderColor: "border-emerald-500", bgColor: "bg-emerald-900/20", textColor: "text-emerald-400" };
                 }
             },
             methods: {
                 calculateMealPlan(mealIndex) {
-                    let target = { 
-                        carb: this.dailyTarget.carb * this.meals[mealIndex].ratio, 
-                        protein: this.dailyTarget.protein * this.meals[mealIndex].ratio, 
-                        fat: this.dailyTarget.fat * this.meals[mealIndex].ratio 
-                    };
+                    let target = { carb: this.dailyTarget.carb * this.meals[mealIndex].ratio, protein: this.dailyTarget.protein * this.meals[mealIndex].ratio, fat: this.dailyTarget.fat * this.meals[mealIndex].ratio };
                     let sel = this.mealSelections[mealIndex];
                     let result = [];
-                    
                     let pFood = this.foods.find(f => f.id === sel.proteinId);
                     let cFood = this.foods.find(f => f.id === sel.carbId);
                     let fFood = this.foods.find(f => f.id === sel.fatId);
@@ -225,10 +241,7 @@
                     let cWeight = 0, cFat = 0, cCarb = 0, cPro = 0;
                     if (cFood) {
                         cWeight = Math.round((Math.max(0, target.carb - pCarb) / cFood.netCarbs) * 100);
-                        if(cWeight > 0) {
-                            cFat = (cWeight/100)*cFood.fat; cCarb = (cWeight/100)*cFood.netCarbs; cPro = (cWeight/100)*cFood.protein;
-                            result.push({ name: cFood.name, weight: cWeight, color: 'text-blue-400' });
-                        }
+                        if(cWeight > 0) { cFat = (cWeight/100)*cFood.fat; cCarb = (cWeight/100)*cFood.netCarbs; cPro = (cWeight/100)*cFood.protein; result.push({ name: cFood.name, weight: cWeight, color: 'text-blue-400' }); }
                     }
 
                     let cookFat = cook ? cook.addedFat : 0;
@@ -239,38 +252,16 @@
                         let remainingFat = target.fat - pFat - cFat - cookFat;
                         if (remainingFat > 0) {
                             fWeight = Math.round((remainingFat / fFood.fat) * 100);
-                            if(fWeight > 0) {
-                                fFat = (fWeight/100)*fFood.fat; fCarb = (fWeight/100)*fFood.netCarbs; fPro = (fWeight/100)*fFood.protein;
-                                result.push({ name: fFood.name, weight: fWeight, color: 'text-yellow-400' });
-                            }
+                            if(fWeight > 0) { fFat = (fWeight/100)*fFood.fat; fCarb = (fWeight/100)*fFood.netCarbs; fPro = (fWeight/100)*fFood.protein; result.push({ name: fFood.name, weight: fWeight, color: 'text-yellow-400' }); }
                         }
                     }
 
-                    // 缓存这顿饭实际产生的真实宏量，用于总表扣减
-                    this.mealActuals[mealIndex] = {
-                        carb: pCarb + cCarb + fCarb,
-                        protein: pPro + cPro + fPro,
-                        fat: pFat + cFat + fFat + cookFat
-                    };
-
+                    this.mealActuals[mealIndex] = { carb: pCarb + cCarb + fCarb, protein: pPro + cPro + fPro, fat: pFat + cFat + fFat + cookFat };
                     return result;
                 },
-                
-                // 核心功能：保存到数据库
                 saveFoodToDB() {
-                    const newFood = {
-                        id: 'custom_' + Date.now(),
-                        name: this.customFood.name,
-                        icon: "🏷️",
-                        type: this.customFood.type,
-                        protein: this.customFood.protein || 0,
-                        fat: this.customFood.fat || 0,
-                        netCarbs: this.customFood.carb || 0
-                    };
-                    this.foods.push(newFood);
-                    // 清空输入框
+                    this.foods.push({ id: 'custom_' + Date.now(), name: this.customFood.name, icon: "🏷️", type: this.customFood.type, protein: this.customFood.protein || 0, fat: this.customFood.fat || 0, netCarbs: this.customFood.carb || 0 });
                     this.customFood = { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' };
-                    alert("✅ 已存入专属数据库！现在你可以直接在左侧配餐下拉菜单中找到它。");
                 }
             }
         }).mount('#app');
