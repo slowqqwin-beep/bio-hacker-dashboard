@@ -242,7 +242,9 @@
 
                 // ========== 逆向翻译算法 (含果糖雷达) ==========
                 calcResults() {
-                    let relevantFoods = this.foods.filter(f => f[this.targetMacro] >= 1 && f.type === this.targetMacro);
+                    // targetMacro 'netCarbs' 需映射到食物库的 type 'carb'
+                    let typeKey = this.targetMacro === 'netCarbs' ? 'carb' : this.targetMacro;
+                    let relevantFoods = this.foods.filter(f => f[this.targetMacro] >= 1 && f.type === typeKey);
                     
                     return relevantFoods.map(food => {
                         let multiplier = this.targetAmount / food[this.targetMacro];
