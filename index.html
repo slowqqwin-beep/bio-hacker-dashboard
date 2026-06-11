@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bio-Hacker OS v10.4 - BMR动态校准+剂量区间版</title>
+    <title>Bio-Hacker OS v10.4 - 食物自选精确录入版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -20,7 +20,7 @@
         <header class="flex justify-between items-end border-b border-slate-700 pb-4">
             <div>
                 <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.4)</h1>
-                <p class="text-slate-400">偏瘦增肌：BMR动态更新 → TDEE小盈余 → 宏量目标区间 → 食材克数上下限</p>
+                <p class="text-slate-400">偏瘦增肌：BMR动态更新 → TDEE小盈余 → 食物自选精确到1g</p>
             </div>
         </header>
 
@@ -86,40 +86,40 @@
             <h2 class="text-lg font-bold text-white mb-3">📊 实时动态账本 (Live Ledger)</h2>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 
-                <div class="bg-slate-800 p-3 rounded-lg border flex flex-col justify-between" :class="totalConsumedCals > targetRange.calories.max ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : (totalConsumedCals < targetRange.calories.min ? 'border-amber-500' : 'border-emerald-500')">
+                <div class="bg-slate-800 p-3 rounded-lg border flex flex-col justify-between" :class="totalConsumedCals > dailyTarget.calories ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'border-slate-700'">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-white text-xs font-bold">已配总热量</span>
-                        <span class="text-[10px] text-slate-400">目标区间: {{ targetRange.calories.min }}-{{ targetRange.calories.max }}</span>
+                        <span class="text-[10px] text-slate-400">目标热量: {{ dailyTarget.calories }}</span>
                     </div>
                     <div class="flex justify-between items-end">
-                        <div class="text-2xl font-black" :class="totalConsumedCals > targetRange.calories.max ? 'text-rose-500' : (totalConsumedCals < targetRange.calories.min ? 'text-amber-300' : 'text-white')">{{ totalConsumedCals }}<span class="text-xs font-normal text-slate-400 ml-1">kcal</span></div>
-                        <div class="text-xs" :class="totalConsumedCals > targetRange.calories.max ? 'text-rose-500' : (totalConsumedCals < targetRange.calories.min ? 'text-amber-300' : 'text-emerald-400')">
-                            {{ calorieStatusText }}
+                        <div class="text-2xl font-black" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-white'">{{ totalConsumedCals }}<span class="text-xs font-normal text-slate-400 ml-1">kcal</span></div>
+                        <div class="text-xs" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-slate-400'">
+                            {{ totalConsumedCals > dailyTarget.calories ? '略超目标' : '未达目标' }}
                         </div>
                     </div>
                 </div>
                 
                 <div class="bg-slate-800 p-3 rounded-lg border border-blue-900 flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-1"><span class="text-blue-400 text-xs">碳水池</span><span class="text-[10px] text-slate-500">区间: {{ targetRange.carb.min }}-{{ targetRange.carb.max }}g</span></div>
+                    <div class="flex justify-between items-center mb-1"><span class="text-blue-400 text-xs">碳水池</span><span class="text-[10px] text-slate-500">目标: {{ dailyTarget.carb }}g</span></div>
                     <div class="flex justify-between items-end">
                         <div class="text-xl font-bold text-white">已配: {{ totalConsumed.carb }}<span class="text-xs font-normal">g</span></div>
-                        <div class="text-sm font-bold" :class="macroStatus('carb').class">{{ macroStatus('carb').text }}</div>
+                        <div class="text-sm font-bold" :class="remainingMacros.carb < 0 ? 'text-rose-500' : 'text-emerald-400'">余 {{ remainingMacros.carb }}g</div>
                     </div>
                 </div>
                 
                 <div class="bg-slate-800 p-3 rounded-lg border border-purple-900 flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-1"><span class="text-purple-400 text-xs">蛋白质</span><span class="text-[10px] text-slate-500">区间: {{ targetRange.protein.min }}-{{ targetRange.protein.max }}g</span></div>
+                    <div class="flex justify-between items-center mb-1"><span class="text-purple-400 text-xs">蛋白质</span><span class="text-[10px] text-slate-500">目标: {{ dailyTarget.protein }}g</span></div>
                     <div class="flex justify-between items-end">
                         <div class="text-xl font-bold text-white">已配: {{ totalConsumed.protein }}<span class="text-xs font-normal">g</span></div>
-                        <div class="text-sm font-bold" :class="macroStatus('protein').class">{{ macroStatus('protein').text }}</div>
+                        <div class="text-sm font-bold" :class="remainingMacros.protein < 0 ? 'text-rose-500' : 'text-emerald-400'">余 {{ remainingMacros.protein }}g</div>
                     </div>
                 </div>
                 
                 <div class="bg-slate-800 p-3 rounded-lg border border-yellow-900 flex flex-col justify-between">
-                    <div class="flex justify-between items-center mb-1"><span class="text-yellow-400 text-xs">脂肪额度</span><span class="text-[10px] text-slate-500">区间: {{ targetRange.fat.min }}-{{ targetRange.fat.max }}g</span></div>
+                    <div class="flex justify-between items-center mb-1"><span class="text-yellow-400 text-xs">脂肪额度</span><span class="text-[10px] text-slate-500">目标: {{ dailyTarget.fat }}g</span></div>
                     <div class="flex justify-between items-end">
                         <div class="text-xl font-bold text-white">已配: {{ totalConsumed.fat }}<span class="text-xs font-normal">g</span></div>
-                        <div class="text-sm font-bold" :class="macroStatus('fat').class">{{ macroStatus('fat').text }}</div>
+                        <div class="text-sm font-bold" :class="remainingMacros.fat < 0 ? 'text-rose-500' : 'text-emerald-400'">余 {{ remainingMacros.fat }}g</div>
                     </div>
                 </div>
             </div>
@@ -127,22 +127,22 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="glass-card p-5 rounded-xl">
-                <h2 class="text-lg font-bold text-blue-300 mb-2">🍽️ 主食矩阵生成器</h2>
-                <p class="text-[11px] text-slate-400 mb-4">每个食材显示：建议克数｜可用范围。范围按当前 BMR/TDEE、训练日/休息日、每日宏量上下限和本餐占比动态计算。</p>
+                <h2 class="text-lg font-bold text-blue-300 mb-4">🍽️ 主食矩阵生成器</h2>
                 <div class="space-y-4">
                     <div v-for="(meal, index) in meals" :key="index" class="bg-slate-800 p-4 rounded-xl border border-slate-700">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="font-bold text-white text-sm">{{ meal.icon }} {{ meal.name }}</h3>
+                            <button v-if="hasLockedGrams(index)" @click="clearMealLocks(index)" class="text-[10px] text-slate-400 hover:text-rose-300 underline">清除手动克数</button>
                         </div>
                         <div class="grid grid-cols-2 gap-2 mb-3">
-                            <select v-model="mealSelections[index].proteinId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                            <select v-model="mealSelections[index].proteinId" @change="mealSelections[index].proteinG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
                                 <option v-for="f in availableProteins" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
-                            <select v-model="mealSelections[index].carbId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                            <select v-model="mealSelections[index].carbId" @change="mealSelections[index].carbG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
                                 <option value="none">🚫 无(断碳)</option>
                                 <option v-for="f in availableCarbs" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
-                            <select v-model="mealSelections[index].fatId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                            <select v-model="mealSelections[index].fatId" @change="mealSelections[index].fatG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
                                 <option value="none">🚫 无(肉脂够)</option>
                                 <option v-for="f in availableFats" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
@@ -152,7 +152,7 @@
                         </div>
                         <div class="p-2 bg-slate-900 rounded border border-slate-700 text-xs">
                             <span v-for="result in calculateMealPlan(index)" v-show="result.weight > 0" class="inline-block mr-3 mb-1">
-                                <span class="text-white">{{ result.name }}:</span> <span class="font-bold" :class="result.color">{{ result.weight }}g</span><span class="text-slate-500 ml-1">｜{{ result.rangeText }}</span>
+                                <span class="text-white">{{ result.name }}:</span> <span class="font-bold" :class="result.color">{{ result.weight }}g</span><span v-if="result.locked" class="ml-1 text-[10px] text-emerald-300">锁定</span>
                             </span>
                         </div>
                     </div>
@@ -182,6 +182,42 @@
                 <button @click="saveFoodToDB" :disabled="!customFood.name" class="w-full bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-colors flex justify-center items-center gap-2">
                     💾 存入我的专属食物库
                 </button>
+
+                <div class="mt-5 bg-slate-800 p-4 rounded-xl border border-emerald-700/60">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-emerald-300 text-sm">🍱 食物自选｜精确称重录入</h3>
+                        <span class="text-[10px] text-slate-400">精确到 1g</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-slate-400 text-[10px] mb-1">写入哪一餐？</label>
+                            <select v-model.number="quickEntry.mealIndex" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 text-sm">
+                                <option v-for="(m, i) in meals" :value="i">{{ m.icon }} {{ m.name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-[10px] mb-1">数量(g)</label>
+                            <input type="number" min="1" step="1" v-model.number="quickEntry.grams" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 text-sm">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-slate-400 text-[10px] mb-1">从全部食物库选择</label>
+                            <select v-model="quickEntry.foodId" class="w-full bg-slate-900 text-white border border-slate-600 rounded p-1.5 text-sm">
+                                <option v-for="f in allFoodOptions" :value="f.id">{{ f.icon }} {{ f.name }}｜{{ typeLabel(f.type) }}｜P{{ f.protein }} C{{ f.netCarbs }} F{{ f.fat }}/100g</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950 rounded border border-slate-700 p-2 text-[11px] text-slate-300 mb-3">
+                        预估贡献：
+                        <span class="text-white font-bold">{{ quickEntryPreview.calories }} kcal</span>｜
+                        碳水 <span class="text-blue-300 font-bold">{{ quickEntryPreview.carb }}g</span>｜
+                        蛋白 <span class="text-purple-300 font-bold">{{ quickEntryPreview.protein }}g</span>｜
+                        脂肪 <span class="text-yellow-300 font-bold">{{ quickEntryPreview.fat }}g</span>
+                    </div>
+                    <button @click="applyQuickFoodToMeal" :disabled="!quickEntry.foodId || !quickEntry.grams || quickEntry.grams <= 0" class="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-colors">
+                        ➜ 写入原餐食数字
+                    </button>
+                    <p class="mt-2 text-[10px] text-slate-400 leading-relaxed">选中后会自动放到对应餐的蛋白/碳水/脂肪槽位，并用你输入的克数锁定；上方账本会同步重算。</p>
+                </div>
             </div>
         </div>
     </div>
@@ -267,11 +303,12 @@
                     cookingMethods: [ { id: 'boil', name: "💧 水煮", addedFat: 0 }, { id: 'light', name: "🍳 少油", addedFat: 3 } ],
                     meals: [ { name: "第一餐", icon: "🌅", ratio: 0.3 }, { name: "第二餐", icon: "☀️", ratio: 0.4 }, { name: "第三餐", icon: "🌙", ratio: 0.3 } ],
                     mealSelections: [
-                        { proteinId: 'p17', carbId: 'c18', fatId: 'f5', cookingId: 'boil' },
-                        { proteinId: 'p2', carbId: 'c1', fatId: 'f2', cookingId: 'light' },
-                        { proteinId: 'p3', carbId: 'c6', fatId: 'f2', cookingId: 'light' }
+                        { proteinId: 'p17', carbId: 'c18', fatId: 'f5', cookingId: 'boil', proteinG: null, carbG: null, fatG: null },
+                        { proteinId: 'p2', carbId: 'c1', fatId: 'f2', cookingId: 'light', proteinG: null, carbG: null, fatG: null },
+                        { proteinId: 'p3', carbId: 'c6', fatId: 'f2', cookingId: 'light', proteinG: null, carbG: null, fatG: null }
                     ],
                     customFood: { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' },
+                    quickEntry: { mealIndex: 1, foodId: 'p2', grams: 100 },
                     mealActuals: [null, null, null]
                 }
             },
@@ -279,6 +316,14 @@
                 availableProteins() { return this.foods.filter(f=>f.type==='protein'); },
                 availableCarbs() { return this.foods.filter(f=>f.type==='carb'); },
                 availableFats() { return this.foods.filter(f=>f.type==='fat'); },
+                allFoodOptions() {
+                    const order = { protein: 1, carb: 2, fat: 3 };
+                    return [...this.foods].sort((a, b) => (order[a.type] || 9) - (order[b.type] || 9) || a.name.localeCompare(b.name, 'zh-CN'));
+                },
+                selectedQuickFood() { return this.foods.find(f => f.id === this.quickEntry.foodId); },
+                quickEntryPreview() {
+                    return this.calcFoodMacros(this.selectedQuickFood, this.quickEntry.grams);
+                },
 
                 // Mifflin-St Jeor：用身高/体重/年龄/性别估算BMR；适合没有体脂秤数据时。
                 estimatedBmr() {
@@ -299,7 +344,7 @@
                 },
                 tdee() { return Math.round(this.bmr * this.activity); },
                 
-                // 单点目标：用于生成建议克数；真正判断用 targetRange 上下限。
+                // 核心重构：完美加入地中海算法
                 dailyTarget() {
                     let baseCals = this.tdee;
                     if (this.bodyGoal === 'cut') {
@@ -320,6 +365,8 @@
                         carb = Math.round((finalCals * (this.dayType === 'train' ? 0.25 : 0.20)) / 4);
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
                     } else { // mediterranean (地中海)
+                        // 偏瘦女性增肌：不要用碳水热量百分比硬推，否则会把44kg体重推到接近200g碳水。
+                        // 改成体重系数：训练日约2.6g/kg，休息日约2.2g/kg；蛋白保持1.7-1.8g/kg。
                         carb = Math.round(this.weight * (this.dayType === 'train' ? 2.6 : 2.2));
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 1.8 : 1.7));
                     }
@@ -327,30 +374,6 @@
                     let fat = Math.max(0, Math.round((finalCals - carb*4 - protein*4)/9));
                     
                     return { calories: finalCals, carb, protein, fat };
-                },
-
-                // 上下限区间：给“不要低于下限、不要超过上限”的食材克数算法使用。
-                targetRange() {
-                    const cals = this.dailyTarget.calories;
-                    const calBuffer = this.bodyGoal === 'bulk' ? Math.max(60, Math.round(cals * 0.05)) : Math.max(50, Math.round(cals * 0.04));
-                    const proteinMin = Math.round(this.dailyTarget.protein * 0.95);
-                    const proteinMax = Math.round(this.dailyTarget.protein * 1.12);
-                    const carbMin = Math.round(this.dailyTarget.carb * (this.dayType === 'train' ? 0.90 : 0.85));
-                    const carbMax = Math.round(this.dailyTarget.carb * (this.dayType === 'train' ? 1.12 : 1.10));
-                    const fatMin = Math.round(this.dailyTarget.fat * 0.90);
-                    const fatMax = Math.round(this.dailyTarget.fat * 1.10);
-                    return {
-                        calories: { min: cals - calBuffer, target: cals, max: cals + calBuffer },
-                        carb: { min: carbMin, target: this.dailyTarget.carb, max: carbMax },
-                        protein: { min: proteinMin, target: this.dailyTarget.protein, max: proteinMax },
-                        fat: { min: fatMin, target: this.dailyTarget.fat, max: fatMax }
-                    };
-                },
-
-                calorieStatusText() {
-                    if (this.totalConsumedCals > this.targetRange.calories.max) return `超 ${this.totalConsumedCals - this.targetRange.calories.max} kcal`;
-                    if (this.totalConsumedCals < this.targetRange.calories.min) return `差 ${this.targetRange.calories.min - this.totalConsumedCals} kcal`;
-                    return '区间内';
                 },
 
                 totalConsumed() {
@@ -375,227 +398,95 @@
                 }
             },
             methods: {
-                clamp(n, min, max) {
-                    if (!Number.isFinite(n)) return 0;
-                    if (Number.isFinite(min)) n = Math.max(n, min);
-                    if (Number.isFinite(max)) n = Math.min(n, max);
-                    return Math.max(0, n);
-                },
-                rangeText(min, max, feasible=true) {
-                    if (!feasible) return '当前组合难达标';
-                    const lo = Math.max(0, Math.round(min || 0));
-                    const hi = Math.max(lo, Math.round(max || 0));
-                    return `范围 ${lo}-${hi}g`;
-                },
-                macroStatus(kind) {
-                    const value = this.totalConsumed[kind];
-                    const range = this.targetRange[kind];
-                    if (value > range.max) return { text: `超 ${value - range.max}g`, class: 'text-rose-500' };
-                    if (value < range.min) return { text: `差 ${range.min - value}g`, class: 'text-amber-300' };
-                    return { text: '区间内', class: 'text-emerald-400' };
-                },
-                mealRange(mealIndex) {
-                    const ratio = this.meals[mealIndex].ratio;
+                calcFoodMacros(food, grams) {
+                    const g = Math.max(0, Math.round(Number(grams) || 0));
+                    if (!food || g <= 0) return { carb: 0, protein: 0, fat: 0, calories: 0 };
+                    const carb = (g / 100) * (food.netCarbs || 0);
+                    const protein = (g / 100) * (food.protein || 0);
+                    const fat = (g / 100) * (food.fat || 0);
                     return {
-                        carb: {
-                            min: this.targetRange.carb.min * ratio,
-                            target: this.dailyTarget.carb * ratio,
-                            max: this.targetRange.carb.max * ratio
-                        },
-                        protein: {
-                            min: this.targetRange.protein.min * ratio,
-                            target: this.dailyTarget.protein * ratio,
-                            max: this.targetRange.protein.max * ratio
-                        },
-                        fat: {
-                            min: this.targetRange.fat.min * ratio,
-                            target: this.dailyTarget.fat * ratio,
-                            max: this.targetRange.fat.max * ratio
-                        }
+                        carb: Math.round(carb),
+                        protein: Math.round(protein),
+                        fat: Math.round(fat),
+                        calories: Math.round(carb * 4 + protein * 4 + fat * 9)
                     };
                 },
-                addMacro(food, grams) {
-                    return {
-                        carb: (grams/100) * (food?.netCarbs || 0),
-                        protein: (grams/100) * (food?.protein || 0),
-                        fat: (grams/100) * (food?.fat || 0)
-                    };
+                typeLabel(type) {
+                    return type === 'protein' ? '蛋白' : (type === 'carb' ? '碳水/果蔬' : '脂肪');
                 },
-                solveLinear(A, b) {
-                    // 小型高斯消元，支持 1-3 个变量；单位是“100g份数”。
-                    const n = b.length;
-                    const M = A.map((row, i) => [...row, b[i]]);
-                    const EPS = 1e-9;
-                    for (let col = 0; col < n; col++) {
-                        let pivot = col;
-                        for (let r = col + 1; r < n; r++) {
-                            if (Math.abs(M[r][col]) > Math.abs(M[pivot][col])) pivot = r;
-                        }
-                        if (Math.abs(M[pivot][col]) < EPS) return null;
-                        [M[col], M[pivot]] = [M[pivot], M[col]];
-                        const div = M[col][col];
-                        for (let c = col; c <= n; c++) M[col][c] /= div;
-                        for (let r = 0; r < n; r++) {
-                            if (r === col) continue;
-                            const factor = M[r][col];
-                            for (let c = col; c <= n; c++) M[r][c] -= factor * M[col][c];
-                        }
+                cleanGram(value) {
+                    const n = Math.round(Number(value) || 0);
+                    return n > 0 ? n : null;
+                },
+                hasLockedGrams(mealIndex) {
+                    const sel = this.mealSelections[mealIndex];
+                    return !!(sel.proteinG || sel.carbG || sel.fatG);
+                },
+                clearMealLocks(mealIndex) {
+                    this.mealSelections[mealIndex].proteinG = null;
+                    this.mealSelections[mealIndex].carbG = null;
+                    this.mealSelections[mealIndex].fatG = null;
+                },
+                applyQuickFoodToMeal() {
+                    const food = this.selectedQuickFood;
+                    const grams = this.cleanGram(this.quickEntry.grams);
+                    const mealIndex = Number(this.quickEntry.mealIndex);
+                    if (!food || grams === null || mealIndex < 0 || mealIndex >= this.meals.length) return;
+                    const sel = this.mealSelections[mealIndex];
+                    if (food.type === 'protein') {
+                        sel.proteinId = food.id;
+                        sel.proteinG = grams;
+                    } else if (food.type === 'carb') {
+                        sel.carbId = food.id;
+                        sel.carbG = grams;
+                    } else if (food.type === 'fat') {
+                        sel.fatId = food.id;
+                        sel.fatG = grams;
                     }
-                    return M.map(row => row[n]);
-                },
-                macroFromServings(items, servings, cookFat=0) {
-                    const total = { protein: 0, carb: 0, fat: cookFat };
-                    items.forEach((it, i) => {
-                        const x = Math.max(0, servings[i] || 0);
-                        total.protein += (it.food.protein || 0) * x;
-                        total.carb += (it.food.netCarbs || 0) * x;
-                        total.fat += (it.food.fat || 0) * x;
-                    });
-                    return total;
-                },
-                isFeasible(items, servings, range, cookFat=0) {
-                    const EPS = 1e-6;
-                    if (!servings || servings.some(x => !Number.isFinite(x) || x < -EPS)) return false;
-                    const t = this.macroFromServings(items, servings, cookFat);
-                    return t.protein >= range.protein.min - EPS && t.protein <= range.protein.max + EPS &&
-                           t.carb >= range.carb.min - EPS && t.carb <= range.carb.max + EPS &&
-                           t.fat >= range.fat.min - EPS && t.fat <= range.fat.max + EPS;
-                },
-                buildConstraints(items, range, cookFat=0) {
-                    const p = items.map(it => it.food.protein || 0);
-                    const c = items.map(it => it.food.netCarbs || 0);
-                    const f = items.map(it => it.food.fat || 0);
-                    const list = [];
-                    // type: 'min' 表示 sum >= value；'max' 表示 sum <= value。顶点枚举时都作为等式求解，最后再统一验可行性。
-                    list.push({ name: 'proteinMin', coeff: p, value: range.protein.min });
-                    list.push({ name: 'proteinMax', coeff: p, value: range.protein.max });
-                    list.push({ name: 'carbMin', coeff: c, value: range.carb.min });
-                    list.push({ name: 'carbMax', coeff: c, value: range.carb.max });
-                    list.push({ name: 'fatMin', coeff: f, value: Math.max(0, range.fat.min - cookFat) });
-                    list.push({ name: 'fatMax', coeff: f, value: Math.max(0, range.fat.max - cookFat) });
-                    items.forEach((_, i) => {
-                        const coeff = Array(items.length).fill(0);
-                        coeff[i] = 1;
-                        list.push({ name: `x${i}=0`, coeff, value: 0 });
-                    });
-                    return list.filter(con => con.coeff.some(v => Math.abs(v) > 1e-9));
-                },
-                combos(arr, k) {
-                    const out = [];
-                    const pick = (start, cur) => {
-                        if (cur.length === k) { out.push([...cur]); return; }
-                        for (let i = start; i < arr.length; i++) { cur.push(arr[i]); pick(i+1, cur); cur.pop(); }
-                    };
-                    pick(0, []);
-                    return out;
-                },
-                uniqueVertices(vertices) {
-                    const seen = new Set();
-                    const out = [];
-                    vertices.forEach(v => {
-                        const key = v.map(x => Math.round(x * 10000)).join('|');
-                        if (!seen.has(key)) { seen.add(key); out.push(v); }
-                    });
-                    return out;
-                },
-                recipeSolution(items, range, cookFat=0) {
-                    const n = items.length;
-                    if (n === 0) return null;
-                    const constraints = this.buildConstraints(items, range, cookFat);
-                    let vertices = [];
-                    this.combos(constraints, n).forEach(set => {
-                        const A = set.map(con => con.coeff);
-                        const b = set.map(con => con.value);
-                        const x = this.solveLinear(A, b);
-                        if (this.isFeasible(items, x, range, cookFat)) vertices.push(x.map(v => Math.max(0, v)));
-                    });
-                    vertices = this.uniqueVertices(vertices);
-
-                    if (!vertices.length) return { feasible: false, servings: Array(n).fill(0), bounds: Array(n).fill({ min: 0, max: 0 }) };
-
-                    const ATarget = [
-                        items.map(it => it.food.protein || 0),
-                        items.map(it => it.food.netCarbs || 0),
-                        items.map(it => it.food.fat || 0)
-                    ];
-                    const bTarget = [range.protein.target, range.carb.target, Math.max(0, range.fat.target - cookFat)];
-                    let exact = n === 3 ? this.solveLinear(ATarget, bTarget) : null;
-                    let servings;
-                    if (this.isFeasible(items, exact, range, cookFat)) {
-                        servings = exact.map(v => Math.max(0, v));
-                    } else {
-                        const target = { protein: range.protein.target, carb: range.carb.target, fat: range.fat.target };
-                        const score = (v) => {
-                            const t = this.macroFromServings(items, v, cookFat);
-                            return Math.pow((t.protein - target.protein) / Math.max(1, target.protein), 2) +
-                                   Math.pow((t.carb - target.carb) / Math.max(1, target.carb), 2) +
-                                   Math.pow((t.fat - target.fat) / Math.max(1, target.fat), 2);
-                        };
-                        servings = vertices.slice().sort((a,b) => score(a) - score(b))[0];
-                    }
-
-                    const bounds = items.map((_, i) => ({
-                        min: Math.min(...vertices.map(v => v[i])) * 100,
-                        max: Math.max(...vertices.map(v => v[i])) * 100
-                    }));
-                    return { feasible: true, servings, bounds };
-                },
-                fallbackMealPlan(items, range, cookFat=0) {
-                    // 如果某些组合数学上不可行，至少给出按主宏量推导的参考量，并在 UI 标记“当前组合难达标”。
-                    return items.map(it => {
-                        let grams = 0;
-                        if (it.role === 'protein' && it.food.protein > 0) grams = (range.protein.target / it.food.protein) * 100;
-                        else if (it.role === 'carb' && it.food.netCarbs > 0) grams = (range.carb.target / it.food.netCarbs) * 100;
-                        else if (it.role === 'fat' && it.food.fat > 0) grams = (Math.max(0, range.fat.target - cookFat) / it.food.fat) * 100;
-                        return grams / 100;
-                    });
+                    this.quickEntry.grams = grams;
                 },
                 calculateMealPlan(mealIndex) {
-                    const range = this.mealRange(mealIndex);
-                    const sel = this.mealSelections[mealIndex];
-                    const pFood = this.foods.find(f => f.id === sel.proteinId);
-                    const cFood = this.foods.find(f => f.id === sel.carbId);
-                    const fFood = this.foods.find(f => f.id === sel.fatId);
-                    const cook = this.cookingMethods.find(c => c.id === sel.cookingId);
-                    const cookFat = cook ? cook.addedFat : 0;
+                    let target = { carb: this.dailyTarget.carb * this.meals[mealIndex].ratio, protein: this.dailyTarget.protein * this.meals[mealIndex].ratio, fat: this.dailyTarget.fat * this.meals[mealIndex].ratio };
+                    let sel = this.mealSelections[mealIndex];
+                    let result = [];
+                    let pFood = this.foods.find(f => f.id === sel.proteinId);
+                    let cFood = this.foods.find(f => f.id === sel.carbId);
+                    let fFood = this.foods.find(f => f.id === sel.fatId);
+                    let cook = this.cookingMethods.find(c => c.id === sel.cookingId);
 
-                    const items = [];
-                    if (pFood) items.push({ role: 'protein', food: pFood, color: 'text-purple-400' });
-                    if (cFood && cFood.id !== 'none') items.push({ role: 'carb', food: cFood, color: 'text-blue-400' });
-                    if (fFood && fFood.id !== 'none') items.push({ role: 'fat', food: fFood, color: 'text-yellow-400' });
-
-                    let solution = this.recipeSolution(items, range, cookFat);
-                    if (!solution || !solution.feasible) {
-                        const servings = this.fallbackMealPlan(items, range, cookFat);
-                        solution = { feasible: false, servings, bounds: items.map((it, i) => ({ min: servings[i]*100*0.85, max: servings[i]*100*1.15 })) };
+                    let pWeight = 0, pFat = 0, pCarb = 0, pPro = 0;
+                    if (pFood && pFood.protein > 0) {
+                        const locked = this.cleanGram(sel.proteinG);
+                        pWeight = locked || Math.round((target.protein / pFood.protein) * 100);
+                        pFat = (pWeight/100)*pFood.fat; pCarb = (pWeight/100)*pFood.netCarbs; pPro = (pWeight/100)*pFood.protein;
+                        result.push({ name: pFood.name, weight: pWeight, color: 'text-purple-400', locked: !!locked });
                     }
 
-                    const result = [];
-                    let actual = { carb: 0, protein: 0, fat: cookFat };
-                    items.forEach((it, i) => {
-                        const grams = Math.max(0, Math.round((solution.servings[i] || 0) * 100));
-                        const b = solution.bounds[i] || { min: grams, max: grams };
-                        const m = this.addMacro(it.food, grams);
-                        actual.carb += m.carb; actual.protein += m.protein; actual.fat += m.fat;
-                        if (grams > 0) {
-                            result.push({
-                                name: it.food.name,
-                                weight: grams,
-                                min: b.min,
-                                max: b.max,
-                                rangeText: this.rangeText(b.min, b.max, solution.feasible),
-                                color: it.color
-                            });
-                        }
-                    });
+                    let cWeight = 0, cFat = 0, cCarb = 0, cPro = 0;
+                    if (cFood && cFood.netCarbs > 0) {
+                        const locked = this.cleanGram(sel.carbG);
+                        cWeight = locked || Math.round((Math.max(0, target.carb - pCarb) / cFood.netCarbs) * 100);
+                        if(cWeight > 0) { cFat = (cWeight/100)*cFood.fat; cCarb = (cWeight/100)*cFood.netCarbs; cPro = (cWeight/100)*cFood.protein; result.push({ name: cFood.name, weight: cWeight, color: 'text-blue-400', locked: !!locked }); }
+                    }
 
-                    if (cookFat > 0) { result.push({ name: cook.name.split(' ')[1], weight: cookFat, min: cookFat, max: cookFat, rangeText: '固定', color: 'text-emerald-400' }); }
+                    let cookFat = cook ? cook.addedFat : 0;
+                    if (cookFat > 0) { result.push({ name: cook.name.split(' ')[1], weight: cookFat, color: 'text-emerald-400', locked: false }); }
 
-                    this.mealActuals[mealIndex] = actual;
+                    let fWeight = 0, fFat = 0, fCarb = 0, fPro = 0;
+                    if (fFood && fFood.fat > 0) {
+                        const locked = this.cleanGram(sel.fatG);
+                        let remainingFat = target.fat - pFat - cFat - cookFat;
+                        fWeight = locked || (remainingFat > 0 ? Math.round((remainingFat / fFood.fat) * 100) : 0);
+                        if(fWeight > 0) { fFat = (fWeight/100)*fFood.fat; fCarb = (fWeight/100)*fFood.netCarbs; fPro = (fWeight/100)*fFood.protein; result.push({ name: fFood.name, weight: fWeight, color: 'text-yellow-400', locked: !!locked }); }
+                    }
+
+                    this.mealActuals[mealIndex] = { carb: pCarb + cCarb + fCarb, protein: pPro + cPro + fPro, fat: pFat + cFat + fFat + cookFat };
                     return result;
                 },
                 saveFoodToDB() {
-                    this.foods.push({ id: 'custom_' + Date.now(), name: this.customFood.name, icon: "🏷️", type: this.customFood.type, protein: this.customFood.protein || 0, fat: this.customFood.fat || 0, netCarbs: this.customFood.carb || 0 });
+                    const newFood = { id: 'custom_' + Date.now(), name: this.customFood.name, icon: "🏷️", type: this.customFood.type, protein: this.customFood.protein || 0, fat: this.customFood.fat || 0, netCarbs: this.customFood.carb || 0 };
+                    this.foods.push(newFood);
+                    this.quickEntry.foodId = newFood.id;
                     this.customFood = { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' };
                 }
             }
