@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bio-Hacker OS v10.1 - 终极形态(修复地中海模式)</title>
+    <title>Bio-Hacker OS v10.3 - BMR动态校准版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -19,22 +19,56 @@
     <div id="app" class="max-w-6xl mx-auto space-y-6">
         <header class="flex justify-between items-end border-b border-slate-700 pb-4">
             <div>
-                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.1)</h1>
-                <p class="text-slate-400">引入体型目标阀门与绝对卡路里追踪 (修复地中海算法)</p>
+                <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.3)</h1>
+                <p class="text-slate-400">偏瘦增肌：BMR动态更新 → TDEE小盈余 → 体重系数宏量营养素</p>
             </div>
         </header>
 
-        <div class="glass-card p-4 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+        <div class="glass-card p-4 rounded-xl border-t-4 border-t-emerald-500 grid grid-cols-2 md:grid-cols-8 gap-3 items-end">
             <div><label class="block text-slate-400 text-[10px] mb-1">体重(kg)</label><input type="number" v-model.number="weight" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
+            <div><label class="block text-slate-400 text-[10px] mb-1">身高(cm)</label><input type="number" v-model.number="height" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
+            <div><label class="block text-slate-400 text-[10px] mb-1">年龄</label><input type="number" v-model.number="age" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
+            <div>
+                <label class="block text-slate-400 text-[10px] mb-1">性别</label>
+                <select v-model="sex" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                    <option value="female">女性</option>
+                    <option value="male">男性</option>
+                </select>
+            </div>
             <div><label class="block text-slate-400 text-[10px] mb-1">体脂率(%)</label><input type="number" v-model.number="bodyFat" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-sm"></div>
-            
+            <div>
+                <label class="block text-slate-400 text-[10px] mb-1">活动系数</label>
+                <select v-model.number="activity" class="w-full bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                    <option :value="1.20">久坐 1.20</option>
+                    <option :value="1.25">轻活动 1.25</option>
+                    <option :value="1.35">规律训练 1.35</option>
+                    <option :value="1.45">较活跃 1.45</option>
+                </select>
+            </div>
             <div class="md:col-span-2">
-                <label class="block text-rose-400 font-bold text-[10px] mb-1">🎯 核心体型目标 (决定热量基线)</label>
+                <label class="block text-rose-400 font-bold text-[10px] mb-1">🎯 核心体型目标</label>
                 <div class="flex gap-1">
                     <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="cut" v-model="bodyGoal" class="hidden"><div class="cut text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🔥 减脂缺口</div></label>
                     <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="maintain" v-model="bodyGoal" class="hidden"><div class="maintain text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">⚖️ 维持</div></label>
                     <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="bulk" v-model="bodyGoal" class="hidden"><div class="bulk text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🌱 增肌盈余</div></label>
                 </div>
+            </div>
+
+            <div class="md:col-span-3 bg-slate-900/70 rounded-lg p-3 border border-slate-700">
+                <label class="block text-emerald-300 font-bold text-[10px] mb-2">🧮 基础代谢 BMR 来源</label>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <label class="cursor-pointer radio-btn"><input type="radio" value="auto" v-model="bmrMode" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">自动估算</div></label>
+                    <label class="cursor-pointer radio-btn"><input type="radio" value="manual" v-model="bmrMode" class="hidden"><div class="text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400">手动覆盖</div></label>
+                </div>
+                <input type="number" v-model.number="manualBmr" :disabled="bmrMode !== 'manual'" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-sm disabled:opacity-40" placeholder="例如体脂秤BMR 1104">
+            </div>
+            <div class="md:col-span-3 bg-slate-900/70 rounded-lg p-3 border border-slate-700">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div><div class="text-[10px] text-slate-500">公式BMR</div><div class="text-sm font-bold text-white">{{ estimatedBmr }}</div></div>
+                    <div><div class="text-[10px] text-slate-500">体脂BMR</div><div class="text-sm font-bold text-white">{{ katchBmr }}</div></div>
+                    <div><div class="text-[10px] text-slate-500">当前采用</div><div class="text-sm font-bold text-emerald-400">{{ bmr }} kcal</div></div>
+                </div>
+                <div class="mt-2 text-[10px] text-slate-400">TDEE = {{ bmr }} × {{ activity }} = <span class="text-blue-300 font-bold">{{ tdee }} kcal</span>；{{ bmrSource }}</div>
             </div>
 
             <div>
@@ -55,12 +89,12 @@
                 <div class="bg-slate-800 p-3 rounded-lg border flex flex-col justify-between" :class="totalConsumedCals > dailyTarget.calories ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'border-slate-700'">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-white text-xs font-bold">已配总热量</span>
-                        <span class="text-[10px] text-slate-400">目标上限: {{ dailyTarget.calories }}</span>
+                        <span class="text-[10px] text-slate-400">目标热量: {{ dailyTarget.calories }}</span>
                     </div>
                     <div class="flex justify-between items-end">
                         <div class="text-2xl font-black" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-white'">{{ totalConsumedCals }}<span class="text-xs font-normal text-slate-400 ml-1">kcal</span></div>
                         <div class="text-xs" :class="totalConsumedCals > dailyTarget.calories ? 'text-rose-500' : 'text-slate-400'">
-                            {{ totalConsumedCals > dailyTarget.calories ? '⚠️ 爆卡' : '安全' }}
+                            {{ totalConsumedCals > dailyTarget.calories ? '略超目标' : '未达目标' }}
                         </div>
                     </div>
                 </div>
@@ -164,14 +198,13 @@
             { id: 'p6', name: "瘦牛肉", icon: "🥩", type: "protein", protein: 26, fat: 10, netCarbs: 0, quality: "iron_zinc", medScore: 3, note: "补铁锌，女性增肌可每周1-3次" },
             { id: 'p7', name: "牛里脊", icon: "🥩", type: "protein", protein: 27, fat: 7, netCarbs: 0, quality: "lean_red_meat", medScore: 3, note: "比普通牛肉更瘦" },
             { id: 'p8', name: "猪里脊", icon: "🥓", type: "protein", protein: 27, fat: 6, netCarbs: 0, quality: "lean_protein", medScore: 3, note: "可偶尔替换鸡胸" },
-            { id: 'p9', name: "全蛋", icon: "🥚", type: "protein", protein: 13, fat: 10, netCarbs: 1, quality: "complete_protein", medScore: 4, note: "每100g约2个蛋" },
+            { id: 'p9', name: "鸡蛋（全蛋）", icon: "🥚", type: "protein", protein: 13, fat: 10, netCarbs: 1, quality: "complete_protein", medScore: 4, note: "普通鸡蛋；每100g约2个中等鸡蛋" },
             { id: 'p10', name: "蛋清", icon: "🥚", type: "protein", protein: 11, fat: 0.2, netCarbs: 1, quality: "lean_protein", medScore: 4, note: "低脂补蛋白" },
             { id: 'p11', name: "鳕鱼", icon: "🐟", type: "protein", protein: 23, fat: 1, netCarbs: 0, quality: "lean_fish", medScore: 5, note: "高蛋白低脂白鱼" },
             { id: 'p12', name: "金枪鱼水浸", icon: "🐟", type: "protein", protein: 24, fat: 1, netCarbs: 0, quality: "lean_fish", medScore: 4, note: "方便但注意汞摄入，别天天吃" },
             { id: 'p13', name: "沙丁鱼", icon: "🐟", type: "protein", protein: 24, fat: 11, netCarbs: 0, quality: "omega3_protein", medScore: 5, note: "地中海友好，钙和Omega-3较好" },
             { id: 'p14', name: "扇贝", icon: "🦪", type: "protein", protein: 20, fat: 1, netCarbs: 3, quality: "seafood", medScore: 5, note: "低脂海鲜" },
             { id: 'p15', name: "北豆腐", icon: "⬜", type: "protein", protein: 10, fat: 5, netCarbs: 3, quality: "plant_protein", medScore: 4, note: "植物蛋白，适合换口味" },
-            { id: 'p16', name: "天贝", icon: "🫘", type: "protein", protein: 19, fat: 10, netCarbs: 9, quality: "plant_protein", medScore: 4, note: "发酵豆制品，蛋白高" },
             { id: 'p17', name: "希腊酸奶无糖", icon: "🥣", type: "protein", protein: 10, fat: 2, netCarbs: 4, quality: "dairy_protein", medScore: 5, note: "早餐/加餐非常适合" },
             { id: 'p18', name: "Cottage Cheese", icon: "🧀", type: "protein", protein: 12, fat: 3, netCarbs: 3, quality: "slow_protein", medScore: 4, note: "睡前蛋白好用" },
             { id: 'p19', name: "无糖豆浆", icon: "🥛", type: "protein", protein: 3.5, fat: 2, netCarbs: 2, quality: "plant_protein", medScore: 4, note: "蛋白不算高，但适合搭配" },
@@ -227,7 +260,7 @@
         createApp({
             data() {
                 return {
-                    weight: 44.1, bodyFat: 22.8, activity: 1.375, dietMode: 'mediterranean', dayType: 'train',
+                    weight: 44.1, height: 158, age: 48, sex: 'female', bodyFat: 22.8, activity: 1.25, bmrMode: 'manual', manualBmr: 1104, dietMode: 'mediterranean', dayType: 'train',
                     bodyGoal: 'bulk', 
                     foods: [...defaultDatabase],
                     cookingMethods: [ { id: 'boil', name: "💧 水煮", addedFat: 0 }, { id: 'light', name: "🍳 少油", addedFat: 3 } ],
@@ -246,7 +279,23 @@
                 availableCarbs() { return this.foods.filter(f=>f.type==='carb'); },
                 availableFats() { return this.foods.filter(f=>f.type==='fat'); },
 
-                bmr() { return Math.round(370 + (21.6 * (this.weight * (1 - (this.bodyFat / 100))))); },
+                // Mifflin-St Jeor：用身高/体重/年龄/性别估算BMR；适合没有体脂秤数据时。
+                estimatedBmr() {
+                    const sexOffset = this.sex === 'male' ? 5 : -161;
+                    return Math.round((10 * this.weight) + (6.25 * this.height) - (5 * this.age) + sexOffset);
+                },
+                // Katch-McArdle：用体脂率估算瘦体重，再估算BMR；作为参考值展示。
+                katchBmr() {
+                    const leanMass = this.weight * (1 - ((this.bodyFat || 0) / 100));
+                    return Math.round(370 + (21.6 * leanMass));
+                },
+                bmr() {
+                    if (this.bmrMode === 'manual' && this.manualBmr && this.manualBmr > 0) return Math.round(this.manualBmr);
+                    return this.estimatedBmr;
+                },
+                bmrSource() {
+                    return this.bmrMode === 'manual' && this.manualBmr > 0 ? '当前使用手动BMR，适合录入体脂秤/设备测量值' : '当前使用身高体重年龄性别公式估算BMR';
+                },
                 tdee() { return Math.round(this.bmr * this.activity); },
                 
                 // 核心重构：完美加入地中海算法
@@ -256,7 +305,7 @@
                         baseCals = this.bmr;
                     } else if (this.bodyGoal === 'bulk') {
                         // 偏瘦增肌：训练日盈余更多，休息日也保留小盈余，避免练了不长
-                        baseCals = this.tdee + (this.dayType === 'train' ? 250 : 150);
+                        baseCals = this.tdee + (this.dayType === 'train' ? 200 : 100);
                     }
 
                     let finalCals = this.bodyGoal === 'bulk' ? baseCals : (this.dayType === 'train' ? baseCals + 200 : baseCals);
@@ -270,8 +319,10 @@
                         carb = Math.round((finalCals * (this.dayType === 'train' ? 0.25 : 0.20)) / 4);
                         protein = Math.round(this.weight * (this.dayType === 'train' ? 2.2 : 1.8));
                     } else { // mediterranean (地中海)
-                        carb = Math.round((finalCals * (this.dayType === 'train' ? 0.45 : 0.40)) / 4);
-                        protein = Math.round(this.weight * (this.dayType === 'train' ? 1.8 : 1.5));
+                        // 偏瘦女性增肌：不要用碳水热量百分比硬推，否则会把44kg体重推到接近200g碳水。
+                        // 改成体重系数：训练日约2.6g/kg，休息日约2.2g/kg；蛋白保持1.7-1.8g/kg。
+                        carb = Math.round(this.weight * (this.dayType === 'train' ? 2.6 : 2.2));
+                        protein = Math.round(this.weight * (this.dayType === 'train' ? 1.8 : 1.7));
                     }
                     
                     let fat = Math.max(0, Math.round((finalCals - carb*4 - protein*4)/9));
