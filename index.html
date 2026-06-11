@@ -31,8 +31,9 @@
             <div class="md:col-span-2">
                 <label class="block text-rose-400 font-bold text-[10px] mb-1">🎯 核心体型目标 (决定热量基线)</label>
                 <div class="flex gap-1">
-                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="cut" v-model="bodyGoal" class="hidden"><div class="cut text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🔥 减脂缺口(压至BMR)</div></label>
-                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="maintain" v-model="bodyGoal" class="hidden"><div class="maintain text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">⚖️ 维持(TDEE)</div></label>
+                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="cut" v-model="bodyGoal" class="hidden"><div class="cut text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🔥 减脂缺口</div></label>
+                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="maintain" v-model="bodyGoal" class="hidden"><div class="maintain text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">⚖️ 维持</div></label>
+                    <label class="cursor-pointer flex-1 goal-btn"><input type="radio" value="bulk" v-model="bodyGoal" class="hidden"><div class="bulk text-center py-1 rounded border border-slate-700 bg-slate-900 text-xs text-slate-400 transition-colors">🌱 增肌盈余</div></label>
                 </div>
             </div>
 
@@ -154,27 +155,87 @@
         const { createApp } = Vue;
 
         const defaultDatabase = [
-            { id: 'p1', name: "大虾", icon: "🦐", type: "protein", protein: 20, fat: 0.5, netCarbs: 0 },
-            { id: 'p2', name: "鸡胸", icon: "🍗", type: "protein", protein: 31, fat: 3.6, netCarbs: 0 },
-            { id: 'p3', name: "三文鱼", icon: "🍣", type: "protein", protein: 20, fat: 13, netCarbs: 0 },
-            { id: 'c1', name: "米饭", icon: "🍚", type: "carb", protein: 2.6, fat: 0.3, netCarbs: 28 },
-            { id: 'c4', name: "西兰花", icon: "🥦", type: "carb", protein: 2.8, fat: 0.4, netCarbs: 4 },
-            { id: 'f1', name: "牛油果", icon: "🥑", type: "fat", protein: 2.0, fat: 15, netCarbs: 2 },
-            { id: 'f3', name: "黄油", icon: "🧈", type: "fat", protein: 0.8, fat: 81, netCarbs: 0 }
+            // 蛋白质库 Protein｜数值为每100g可食部/熟重估算
+            { id: 'p1', name: "大虾", icon: "🦐", type: "protein", protein: 24, fat: 0.5, netCarbs: 0, quality: "lean_protein", medScore: 5, note: "低脂高蛋白，训练日/休息日都适合" },
+            { id: 'p2', name: "鸡胸", icon: "🍗", type: "protein", protein: 31, fat: 3.6, netCarbs: 0, quality: "lean_protein", medScore: 4, note: "最稳定的瘦蛋白" },
+            { id: 'p3', name: "三文鱼", icon: "🍣", type: "protein", protein: 22, fat: 13, netCarbs: 0, quality: "omega3_protein", medScore: 5, note: "蛋白+Omega-3，地中海核心" },
+            { id: 'p4', name: "鸡腿去皮", icon: "🍖", type: "protein", protein: 26, fat: 8, netCarbs: 0, quality: "protein", medScore: 4, note: "比鸡胸更好吃，脂肪略高" },
+            { id: 'p5', name: "火鸡胸", icon: "🦃", type: "protein", protein: 29, fat: 1.5, netCarbs: 0, quality: "lean_protein", medScore: 4, note: "很瘦的高蛋白" },
+            { id: 'p6', name: "瘦牛肉", icon: "🥩", type: "protein", protein: 26, fat: 10, netCarbs: 0, quality: "iron_zinc", medScore: 3, note: "补铁锌，女性增肌可每周1-3次" },
+            { id: 'p7', name: "牛里脊", icon: "🥩", type: "protein", protein: 27, fat: 7, netCarbs: 0, quality: "lean_red_meat", medScore: 3, note: "比普通牛肉更瘦" },
+            { id: 'p8', name: "猪里脊", icon: "🥓", type: "protein", protein: 27, fat: 6, netCarbs: 0, quality: "lean_protein", medScore: 3, note: "可偶尔替换鸡胸" },
+            { id: 'p9', name: "全蛋", icon: "🥚", type: "protein", protein: 13, fat: 10, netCarbs: 1, quality: "complete_protein", medScore: 4, note: "每100g约2个蛋" },
+            { id: 'p10', name: "蛋清", icon: "🥚", type: "protein", protein: 11, fat: 0.2, netCarbs: 1, quality: "lean_protein", medScore: 4, note: "低脂补蛋白" },
+            { id: 'p11', name: "鳕鱼", icon: "🐟", type: "protein", protein: 23, fat: 1, netCarbs: 0, quality: "lean_fish", medScore: 5, note: "高蛋白低脂白鱼" },
+            { id: 'p12', name: "金枪鱼水浸", icon: "🐟", type: "protein", protein: 24, fat: 1, netCarbs: 0, quality: "lean_fish", medScore: 4, note: "方便但注意汞摄入，别天天吃" },
+            { id: 'p13', name: "沙丁鱼", icon: "🐟", type: "protein", protein: 24, fat: 11, netCarbs: 0, quality: "omega3_protein", medScore: 5, note: "地中海友好，钙和Omega-3较好" },
+            { id: 'p14', name: "扇贝", icon: "🦪", type: "protein", protein: 20, fat: 1, netCarbs: 3, quality: "seafood", medScore: 5, note: "低脂海鲜" },
+            { id: 'p15', name: "北豆腐", icon: "⬜", type: "protein", protein: 10, fat: 5, netCarbs: 3, quality: "plant_protein", medScore: 4, note: "植物蛋白，适合换口味" },
+            { id: 'p16', name: "天贝", icon: "🫘", type: "protein", protein: 19, fat: 10, netCarbs: 9, quality: "plant_protein", medScore: 4, note: "发酵豆制品，蛋白高" },
+            { id: 'p17', name: "希腊酸奶无糖", icon: "🥣", type: "protein", protein: 10, fat: 2, netCarbs: 4, quality: "dairy_protein", medScore: 5, note: "早餐/加餐非常适合" },
+            { id: 'p18', name: "Cottage Cheese", icon: "🧀", type: "protein", protein: 12, fat: 3, netCarbs: 3, quality: "slow_protein", medScore: 4, note: "睡前蛋白好用" },
+            { id: 'p19', name: "无糖豆浆", icon: "🥛", type: "protein", protein: 3.5, fat: 2, netCarbs: 2, quality: "plant_protein", medScore: 4, note: "蛋白不算高，但适合搭配" },
+            { id: 'p20', name: "乳清蛋白", icon: "🥤", type: "protein", protein: 78, fat: 5, netCarbs: 8, quality: "supplement", medScore: 3, note: "补充剂，品牌差异大" },
+
+            // 碳水库 Carb｜控糖重点是来源和搭配，不是完全低碳
+            { id: 'c1', name: "白米饭", icon: "🍚", type: "carb", protein: 2.6, fat: 0.3, netCarbs: 28, quality: "regular_carb", medScore: 3, note: "可吃，建议搭配蛋白+蔬菜+橄榄油" },
+            { id: 'c2', name: "糙米饭", icon: "🍚", type: "carb", protein: 2.5, fat: 1, netCarbs: 23, quality: "whole_grain", medScore: 5, note: "比白米更稳" },
+            { id: 'c3', name: "藜麦熟", icon: "🌾", type: "carb", protein: 4, fat: 2, netCarbs: 21, quality: "whole_grain", medScore: 5, note: "蛋白和矿物质更好" },
+            { id: 'c4', name: "西兰花", icon: "🥦", type: "carb", protein: 2.8, fat: 0.4, netCarbs: 4, quality: "vegetable", medScore: 5, note: "蔬菜，不适合作为唯一主碳水" },
+            { id: 'c5', name: "燕麦干", icon: "🥣", type: "carb", protein: 13, fat: 7, netCarbs: 66, quality: "whole_grain", medScore: 5, note: "早餐碳水，适合配酸奶" },
+            { id: 'c6', name: "红薯熟", icon: "🍠", type: "carb", protein: 1.6, fat: 0.1, netCarbs: 20, quality: "slow_carb", medScore: 5, note: "训练日前后很好" },
+            { id: 'c7', name: "土豆熟", icon: "🥔", type: "carb", protein: 2, fat: 0.1, netCarbs: 17, quality: "slow_carb", medScore: 4, note: "冷却后饱腹感更好" },
+            { id: 'c8', name: "南瓜熟", icon: "🎃", type: "carb", protein: 1, fat: 0.1, netCarbs: 7, quality: "low_carb_veg", medScore: 5, note: "低热量碳水" },
+            { id: 'c9', name: "玉米熟", icon: "🌽", type: "carb", protein: 3.4, fat: 1.5, netCarbs: 21, quality: "starchy_veg", medScore: 4, note: "可做主食" },
+            { id: 'c10', name: "全麦意面熟", icon: "🍝", type: "carb", protein: 5, fat: 1, netCarbs: 27, quality: "whole_grain", medScore: 5, note: "地中海适配，配鱼虾番茄" },
+            { id: 'c11', name: "普通意面熟", icon: "🍝", type: "carb", protein: 5, fat: 1, netCarbs: 30, quality: "regular_carb", medScore: 4, note: "可吃，注意份量和酱料" },
+            { id: 'c12', name: "全麦面包", icon: "🍞", type: "carb", protein: 10, fat: 4, netCarbs: 42, quality: "whole_grain", medScore: 4, note: "看配料表，避免高糖款" },
+            { id: 'c13', name: "鹰嘴豆熟", icon: "🫘", type: "carb", protein: 9, fat: 3, netCarbs: 27, quality: "legume", medScore: 5, note: "碳水+蛋白+纤维" },
+            { id: 'c14', name: "扁豆熟", icon: "🫘", type: "carb", protein: 9, fat: 0.4, netCarbs: 20, quality: "legume", medScore: 5, note: "控糖友好，非常推荐" },
+            { id: 'c15', name: "黑豆熟", icon: "🫘", type: "carb", protein: 9, fat: 0.5, netCarbs: 24, quality: "legume", medScore: 5, note: "饱腹感强" },
+            { id: 'c16', name: "红腰豆熟", icon: "🫘", type: "carb", protein: 9, fat: 0.5, netCarbs: 22, quality: "legume", medScore: 5, note: "适合沙拉/炖菜" },
+            { id: 'c17', name: "毛豆熟", icon: "🫛", type: "carb", protein: 11, fat: 5, netCarbs: 9, quality: "legume", medScore: 5, note: "蛋白高，碳水低" },
+            { id: 'c18', name: "蓝莓", icon: "🫐", type: "carb", protein: 1, fat: 0.3, netCarbs: 14, quality: "fruit", medScore: 5, note: "低糖水果，适合配酸奶" },
+            { id: 'c19', name: "草莓", icon: "🍓", type: "carb", protein: 1, fat: 0.3, netCarbs: 8, quality: "fruit", medScore: 5, note: "低糖水果" },
+            { id: 'c20', name: "苹果", icon: "🍎", type: "carb", protein: 0.3, fat: 0.2, netCarbs: 14, quality: "fruit", medScore: 4, note: "建议搭配酸奶/坚果" },
+            { id: 'c21', name: "橙子", icon: "🍊", type: "carb", protein: 1, fat: 0.1, netCarbs: 12, quality: "fruit", medScore: 4, note: "完整水果可以，果汁不推荐" },
+            { id: 'c22', name: "猕猴桃", icon: "🥝", type: "carb", protein: 1, fat: 0.5, netCarbs: 15, quality: "fruit", medScore: 4, note: "维C高" },
+            { id: 'c23', name: "香蕉", icon: "🍌", type: "carb", protein: 1, fat: 0.3, netCarbs: 23, quality: "fruit", medScore: 3, note: "更适合训练前后" },
+            { id: 'c24', name: "菠菜", icon: "🥬", type: "carb", protein: 3, fat: 0.4, netCarbs: 4, quality: "vegetable", medScore: 5, note: "蔬菜，不适合作为唯一主碳水" },
+            { id: 'c25', name: "番茄", icon: "🍅", type: "carb", protein: 1, fat: 0.2, netCarbs: 4, quality: "vegetable", medScore: 5, note: "地中海核心蔬菜" },
+            { id: 'c26', name: "彩椒", icon: "🫑", type: "carb", protein: 1, fat: 0.3, netCarbs: 6, quality: "vegetable", medScore: 5, note: "维C高" },
+            { id: 'c27', name: "蘑菇", icon: "🍄", type: "carb", protein: 3, fat: 0.3, netCarbs: 3, quality: "vegetable", medScore: 5, note: "提鲜低热量" },
+            { id: 'c28', name: "芦笋", icon: "🌿", type: "carb", protein: 2, fat: 0.2, netCarbs: 4, quality: "vegetable", medScore: 5, note: "地中海友好蔬菜" },
+            { id: 'c29', name: "花椰菜", icon: "🥦", type: "carb", protein: 2, fat: 0.3, netCarbs: 5, quality: "vegetable", medScore: 5, note: "低碳蔬菜" },
+
+            // 脂肪库 Fat｜地中海主脂肪优先用橄榄油/坚果/牛油果/深海鱼
+            { id: 'f1', name: "牛油果", icon: "🥑", type: "fat", protein: 2.0, fat: 15, netCarbs: 2, quality: "mono_fat", medScore: 5, note: "优质脂肪" },
+            { id: 'f2', name: "橄榄油", icon: "🫒", type: "fat", protein: 0, fat: 100, netCarbs: 0, quality: "mono_fat", medScore: 5, note: "地中海核心脂肪" },
+            { id: 'f3', name: "草饲黄油", icon: "🧈", type: "fat", protein: 0.8, fat: 81, netCarbs: 0, quality: "saturated_fat", medScore: 2, note: "可少量，不建议作为主脂肪" },
+            { id: 'f4', name: "杏仁", icon: "🌰", type: "fat", protein: 21, fat: 50, netCarbs: 10, quality: "nuts", medScore: 5, note: "加餐可用，注意热量" },
+            { id: 'f5', name: "核桃", icon: "🌰", type: "fat", protein: 15, fat: 65, netCarbs: 7, quality: "nuts", medScore: 5, note: "含植物Omega-3" },
+            { id: 'f6', name: "开心果", icon: "🌰", type: "fat", protein: 20, fat: 45, netCarbs: 18, quality: "nuts", medScore: 5, note: "碳水相对更高" },
+            { id: 'f7', name: "腰果", icon: "🌰", type: "fat", protein: 18, fat: 44, netCarbs: 27, quality: "nuts", medScore: 4, note: "碳水较高，控量" },
+            { id: 'f8', name: "花生酱无糖", icon: "🥜", type: "fat", protein: 25, fat: 50, netCarbs: 14, quality: "nut_butter", medScore: 4, note: "容易超量，建议称重" },
+            { id: 'f9', name: "芝麻酱Tahini", icon: "🥄", type: "fat", protein: 17, fat: 53, netCarbs: 12, quality: "seed_paste", medScore: 5, note: "地中海/中东风味" },
+            { id: 'f10', name: "奇亚籽", icon: "⚫", type: "fat", protein: 17, fat: 31, netCarbs: 8, quality: "seed", medScore: 5, note: "碳水多为纤维，适合加酸奶" },
+            { id: 'f11', name: "亚麻籽粉", icon: "🟤", type: "fat", protein: 18, fat: 42, netCarbs: 2, quality: "seed", medScore: 5, note: "适合加酸奶/燕麦" },
+            { id: 'f12', name: "橄榄", icon: "🫒", type: "fat", protein: 1, fat: 11, netCarbs: 3, quality: "mono_fat", medScore: 5, note: "高钠，少量" },
+            { id: 'f13', name: "奶酪", icon: "🧀", type: "fat", protein: 23, fat: 30, netCarbs: 2, quality: "dairy_fat", medScore: 3, note: "少量可用，注意饱和脂肪" }
         ];
 
         createApp({
             data() {
                 return {
-                    weight: 44.0, bodyFat: 23.6, activity: 1.375, dietMode: 'low_carb', dayType: 'train',
-                    bodyGoal: 'cut', 
+                    weight: 44.1, bodyFat: 22.8, activity: 1.375, dietMode: 'mediterranean', dayType: 'train',
+                    bodyGoal: 'bulk', 
                     foods: [...defaultDatabase],
                     cookingMethods: [ { id: 'boil', name: "💧 水煮", addedFat: 0 }, { id: 'light', name: "🍳 少油", addedFat: 3 } ],
                     meals: [ { name: "第一餐", icon: "🌅", ratio: 0.3 }, { name: "第二餐", icon: "☀️", ratio: 0.4 }, { name: "第三餐", icon: "🌙", ratio: 0.3 } ],
                     mealSelections: [
-                        { proteinId: 'p2', carbId: 'c4', fatId: 'f1', cookingId: 'boil' },
-                        { proteinId: 'p2', carbId: 'none', fatId: 'none', cookingId: 'light' },
-                        { proteinId: 'p3', carbId: 'none', fatId: 'none', cookingId: 'light' }
+                        { proteinId: 'p17', carbId: 'c18', fatId: 'f5', cookingId: 'boil' },
+                        { proteinId: 'p2', carbId: 'c1', fatId: 'f2', cookingId: 'light' },
+                        { proteinId: 'p3', carbId: 'c6', fatId: 'f2', cookingId: 'light' }
                     ],
                     customFood: { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' },
                     mealActuals: [null, null, null]
@@ -193,9 +254,12 @@
                     let baseCals = this.tdee;
                     if (this.bodyGoal === 'cut') {
                         baseCals = this.bmr;
+                    } else if (this.bodyGoal === 'bulk') {
+                        // 偏瘦增肌：训练日盈余更多，休息日也保留小盈余，避免练了不长
+                        baseCals = this.tdee + (this.dayType === 'train' ? 250 : 150);
                     }
 
-                    let finalCals = this.dayType === 'train' ? baseCals + 200 : baseCals;
+                    let finalCals = this.bodyGoal === 'bulk' ? baseCals : (this.dayType === 'train' ? baseCals + 200 : baseCals);
                     
                     let carb, protein;
                     
