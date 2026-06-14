@@ -128,7 +128,8 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="glass-card p-5 rounded-xl">
-                <h2 class="text-lg font-bold text-blue-300 mb-4">🍽️ 主食矩阵生成器</h2>
+                <h2 class="text-lg font-bold text-blue-300 mb-2">🍽️ 主食矩阵生成器</h2>
+                <p class="text-[11px] text-slate-400 mb-4">基础盘可选 0蛋白质 / 0碳水 / 0脂肪；右侧追加食物会按三大营养素完整累计。</p>
                 <div class="space-y-4">
                     <div v-for="(meal, index) in meals" :key="index" ref="mealCards" class="bg-slate-800 p-4 rounded-xl border border-slate-700" :class="flashedMealIndex === index ? 'meal-flash border-emerald-400' : ''">
                         <div class="flex justify-between items-center mb-2">
@@ -140,14 +141,15 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2 mb-3">
                             <select v-model="mealSelections[index].proteinId" @change="mealSelections[index].proteinG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
+                                <option value="none">🚫 0蛋白质</option>
                                 <option v-for="f in availableProteins" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
                             <select v-model="mealSelections[index].carbId" @change="mealSelections[index].carbG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
-                                <option value="none">🚫 无(断碳)</option>
+                                <option value="none">🚫 0碳水</option>
                                 <option v-for="f in availableCarbs" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
                             <select v-model="mealSelections[index].fatId" @change="mealSelections[index].fatG=null" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs">
-                                <option value="none">🚫 无(肉脂够)</option>
+                                <option value="none">🚫 0脂肪</option>
                                 <option v-for="f in availableFats" :value="f.id">{{ f.icon }}{{ f.name }}</option>
                             </select>
                             <select v-model="mealSelections[index].cookingId" class="bg-slate-900 text-white border border-slate-700 rounded p-1 text-xs text-emerald-400">
@@ -282,6 +284,7 @@
             { id: 'c9', name: "玉米熟", icon: "🌽", type: "carb", protein: 3.4, fat: 1.5, netCarbs: 21, quality: "starchy_veg", medScore: 4, note: "可做主食" },
             { id: 'c10', name: "全麦意面熟", icon: "🍝", type: "carb", protein: 5, fat: 1, netCarbs: 27, quality: "whole_grain", medScore: 5, note: "地中海适配，配鱼虾番茄" },
             { id: 'c11', name: "普通意面熟", icon: "🍝", type: "carb", protein: 5, fat: 1, netCarbs: 30, quality: "regular_carb", medScore: 4, note: "可吃，注意份量和酱料" },
+            { id: 'c30', name: "普通面条熟", icon: "🍜", type: "carb", protein: 4, fat: 1, netCarbs: 25, quality: "regular_carb", medScore: 3, note: "普通小麦面条，熟重估算；建议搭配蛋白和蔬菜" },
             { id: 'c12', name: "全麦面包", icon: "🍞", type: "carb", protein: 10, fat: 4, netCarbs: 42, quality: "whole_grain", medScore: 4, note: "看配料表，避免高糖款" },
             { id: 'c13', name: "鹰嘴豆熟", icon: "🫘", type: "carb", protein: 9, fat: 3, netCarbs: 27, quality: "legume", medScore: 5, note: "碳水+蛋白+纤维" },
             { id: 'c14', name: "扁豆熟", icon: "🫘", type: "carb", protein: 9, fat: 0.4, netCarbs: 20, quality: "legume", medScore: 5, note: "控糖友好，非常推荐" },
