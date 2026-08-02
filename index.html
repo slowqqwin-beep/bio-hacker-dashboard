@@ -6,6 +6,7 @@
     <title>Bio-Hacker OS v10.8 - 地中海30天菜单版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
@@ -14,14 +15,19 @@
         .goal-btn input[type="radio"]:checked + div.maintain { background-color: #3b82f6; border-color: #2563eb; color: white; }
         .goal-btn input[type="radio"]:checked + div.bulk { background-color: #10b981; border-color: #059669; color: white; }
         .meal-flash { box-shadow: 0 0 0 2px rgba(16,185,129,.9), 0 0 24px rgba(16,185,129,.35); transform: translateY(-1px); transition: all .25s ease; }
+        .export-sheet { position: fixed; left: -12000px; top: 0; width: 1120px; background: #ffffff; color: #0f172a; padding: 42px; z-index: -1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Arial, sans-serif; }
     </style>
 </head>
 <body class="p-4 md:p-6">
     <div id="app" class="max-w-6xl mx-auto space-y-6">
-        <header class="flex justify-between items-end border-b border-slate-700 pb-4">
+        <header class="flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-slate-700 pb-4">
             <div>
                 <h1 class="text-3xl font-bold text-emerald-400 mb-2">⚡ 极客代谢监控中心 (Bio-Hacker OS v10.8)</h1>
                 <p class="text-slate-400">偏瘦增肌：BMR动态更新 → 多食物精确到1g → 地中海30天菜单可套用</p>
+            </div>
+            <div class="flex flex-col items-start md:items-end gap-1">
+                <button @click="saveUserData(false)" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-colors">💾 保存我的数据</button>
+                <span class="text-[10px]" :class="saveStatusType === 'error' ? 'text-rose-300' : 'text-slate-400'">{{ saveStatus }}</span>
             </div>
         </header>
 
@@ -250,7 +256,7 @@
             <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
                 <div>
                     <h2 class="text-lg font-bold text-emerald-300 mb-1">🥗 地中海30天菜单库</h2>
-                    <p class="text-[11px] text-slate-400">30天不重复：选择一天 → 预览三餐 → 一键套用到左侧三餐；套用后仍可继续手动追加/删除/精确到1g调整。</p>
+                    <p class="text-[11px] text-slate-400">30天不重复：食材克重会按实时动态账本的目标热量自动缩放；修改BMR、活动系数、身体目标或训练日后，菜单会立即重新匹配。</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2 min-w-[260px]">
                     <div>
@@ -295,7 +301,8 @@
                         <div class="text-base font-black text-emerald-300 mb-1">Day {{ selectedMenu.day }}｜{{ selectedMenu.title }}</div>
                         <div class="text-[11px] text-slate-400 mb-3">{{ selectedMenu.note }}</div>
                         <div class="bg-slate-950 rounded-lg border border-slate-700 p-3 text-[11px] text-slate-300 space-y-1">
-                            <div>全天：<span class="text-white font-bold">{{ selectedMenuTotals.calories }} kcal</span></div>
+                            <div>全天：<span class="text-white font-bold">{{ selectedMenuTotals.calories }} kcal</span> / 账本目标 {{ dailyTarget.calories }} kcal</div>
+                            <div>克重系数：<span class="text-emerald-300 font-bold">{{ selectedMenuScalePercent }}%</span>（相对原始菜单）</div>
                             <div>碳水：<span class="text-blue-300 font-bold">{{ selectedMenuTotals.carb }}g</span> / 目标 {{ dailyTarget.carb }}g</div>
                             <div>蛋白：<span class="text-purple-300 font-bold">{{ selectedMenuTotals.protein }}g</span> / 目标 {{ dailyTarget.protein }}g</div>
                             <div>脂肪：<span class="text-yellow-300 font-bold">{{ selectedMenuTotals.fat }}g</span> / 目标 {{ dailyTarget.fat }}g</div>
@@ -304,10 +311,49 @@
                     <button @click="applyMediterraneanMenu" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg transition-colors">
                         ✅ 套用这个地中海菜单
                     </button>
-                    <p class="mt-2 text-[10px] text-slate-400 leading-relaxed">套用后会以“追加食物清单”的方式进入三餐，并把基础盘设为0蛋白/0碳水/0脂肪，避免算法自动加餐；你可以继续自己搭配调整。</p>
+                    <button @click="exportDailyMenu" :disabled="!!exportingFormat" class="mt-2 w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-bold transition-colors">{{ exportingFormat ? '生成中…' : '⬇ 下载当天食谱 PNG' }}</button>
+                    <p v-if="exportStatus" class="mt-2 text-[10px]" :class="exportStatusType === 'error' ? 'text-rose-300' : 'text-emerald-300'">{{ exportStatus }}</p>
+                    <p class="mt-2 text-[10px] text-slate-400 leading-relaxed">当前显示和套用的均为已按账本目标热量换算后的克重。套用后会以“追加食物清单”的方式进入三餐，并把基础盘设为0蛋白/0碳水/0脂肪；你仍可精确到1g调整。</p>
                 </div>
             </div>
         </div>
+
+        <section v-if="selectedMenu" id="menu-export-sheet" ref="menuExportCard" class="export-sheet" aria-hidden="true">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #10b981;padding-bottom:18px;margin-bottom:24px;">
+                <div>
+                    <div style="font-size:14px;color:#059669;font-weight:700;margin-bottom:6px;">BIO-HACKER OS｜当天地中海食谱</div>
+                    <h1 style="font-size:30px;line-height:1.2;font-weight:900;margin:0 0 8px;">Day {{ selectedMenu.day }}｜{{ selectedMenu.title }}</h1>
+                    <p style="font-size:15px;color:#475569;margin:0;">{{ selectedMenu.note }}</p>
+                </div>
+                <div style="text-align:right;font-size:14px;color:#475569;line-height:1.8;">
+                    <div>{{ todayLabel }}</div>
+                    <div>账本目标 <strong style="color:#0f172a;">{{ dailyTarget.calories }} kcal</strong></div>
+                    <div>换算系数 <strong style="color:#059669;">{{ selectedMenuScalePercent }}%</strong></div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;">
+                <div v-for="(meal, i) in selectedMenu.meals" :key="'export_' + meal.name" style="border:1px solid #cbd5e1;border-radius:14px;padding:18px;background:#f8fafc;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #cbd5e1;padding-bottom:10px;margin-bottom:10px;">
+                        <h2 style="font-size:18px;font-weight:800;margin:0;">{{ meals[i].icon }} {{ meal.name }}</h2>
+                        <strong style="font-size:13px;color:#059669;">{{ menuMealMacros(meal).calories }} kcal</strong>
+                    </div>
+                    <div v-for="item in meal.items" :key="'export_item_' + item.id" style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed #e2e8f0;font-size:15px;">
+                        <span>{{ menuItemLabel(item) }}</span>
+                        <strong style="white-space:nowrap;color:#047857;">{{ item.grams }}g</strong>
+                    </div>
+                    <div style="margin-top:12px;font-size:13px;color:#475569;line-height:1.7;">
+                        碳水 <strong style="color:#2563eb;">{{ menuMealMacros(meal).carb }}g</strong>　
+                        蛋白 <strong style="color:#7c3aed;">{{ menuMealMacros(meal).protein }}g</strong>　
+                        脂肪 <strong style="color:#b45309;">{{ menuMealMacros(meal).fat }}g</strong>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding:16px 20px;border-radius:12px;background:#ecfdf5;border:1px solid #6ee7b7;font-size:15px;">
+                <strong style="font-size:18px;color:#065f46;">全天合计 {{ selectedMenuTotals.calories }} kcal</strong>
+                <span>碳水 {{ selectedMenuTotals.carb }}g　｜　蛋白 {{ selectedMenuTotals.protein }}g　｜　脂肪 {{ selectedMenuTotals.fat }}g</span>
+            </div>
+            <p style="margin:16px 0 0;font-size:12px;color:#64748b;">食材克重已按实时动态账本目标热量自动换算；实际营养值会因品牌、产地和烹饪方式略有差异。</p>
+        </section>
 
     </div>
 
@@ -557,7 +603,15 @@
                     customFood: { name: '', carb: 0, protein: 0, fat: 0, type: 'carb' },
                     quickEntry: { mealIndex: 1, foodId: 'p2', grams: 100 },
                     mealActuals: [null, null, null],
-                    flashedMealIndex: null
+                    flashedMealIndex: null,
+                    storageKey: 'bio_hacker_os_v10_8_user_data',
+                    saveStatus: '数据会自动保存在当前浏览器',
+                    saveStatusType: 'normal',
+                    autoSaveTimer: null,
+                    autoSaveReady: false,
+                    exportingFormat: '',
+                    exportStatus: '',
+                    exportStatusType: 'normal'
                 }
             },
             computed: {
@@ -570,7 +624,18 @@
                 },
                 selectedQuickFood() { return this.foods.find(f => f.id === this.quickEntry.foodId); },
 
-                selectedMenu() { return this.mediterraneanMenus.find(m => m.day === this.selectedMenuDay) || this.mediterraneanMenus[0]; },
+                selectedMenuTemplate() { return this.mediterraneanMenus.find(m => m.day === this.selectedMenuDay) || this.mediterraneanMenus[0]; },
+                selectedMenu() {
+                    if (!this.selectedMenuTemplate) return null;
+                    return this.scaleMenuToCalories(this.selectedMenuTemplate, this.dailyTarget.calories);
+                },
+                selectedMenuScalePercent() {
+                    if (!this.selectedMenu || !Number.isFinite(this.selectedMenu._scaleFactor)) return 100;
+                    return Math.round(this.selectedMenu._scaleFactor * 100);
+                },
+                todayLabel() {
+                    return new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                },
                 selectedMenuTotals() {
                     if (!this.selectedMenu) return { carb: 0, protein: 0, fat: 0, calories: 0 };
                     return this.menuDayMacros(this.selectedMenu);
@@ -640,7 +705,13 @@
                 },
 
                 totalConsumedCals() {
-                    return Math.round((this.totalConsumed.carb * 4) + (this.totalConsumed.protein * 4) + (this.totalConsumed.fat * 9));
+                    let calories = 0;
+                    this.meals.forEach((_, i) => {
+                        const plan = this.calculateMealPlan(i);
+                        const total = plan.total || { carb: 0, protein: 0, fat: 0 };
+                        calories += total.carb * 4 + total.protein * 4 + total.fat * 9;
+                    });
+                    return Math.round(calories);
                 },
 
                 remainingMacros() {
@@ -651,8 +722,129 @@
                     };
                 }
             },
+            mounted() {
+                this.loadUserData();
+                this.$nextTick(() => {
+                    this.autoSaveReady = true;
+                    this.$watch(
+                        () => this.snapshotUserData(),
+                        () => this.queueAutoSave(),
+                        { deep: true }
+                    );
+                });
+            },
             methods: {
 
+                snapshotUserData() {
+                    return {
+                        weight: this.weight,
+                        height: this.height,
+                        age: this.age,
+                        sex: this.sex,
+                        bodyFat: this.bodyFat,
+                        activity: this.activity,
+                        bmrMode: this.bmrMode,
+                        manualBmr: this.manualBmr,
+                        dietMode: this.dietMode,
+                        dayType: this.dayType,
+                        bodyGoal: this.bodyGoal,
+                        foods: this.foods,
+                        selectedMenuDay: this.selectedMenuDay,
+                        menuApplyMode: this.menuApplyMode,
+                        mealSelections: this.mealSelections,
+                        mealManualItems: this.mealManualItems,
+                        quickEntry: this.quickEntry
+                    };
+                },
+                loadUserData() {
+                    try {
+                        const raw = window.localStorage.getItem(this.storageKey);
+                        if (!raw) return;
+                        const saved = JSON.parse(raw);
+                        const scalarKeys = ['weight', 'height', 'age', 'sex', 'bodyFat', 'activity', 'bmrMode', 'manualBmr', 'dietMode', 'dayType', 'bodyGoal', 'selectedMenuDay', 'menuApplyMode'];
+                        scalarKeys.forEach(key => {
+                            if (Object.prototype.hasOwnProperty.call(saved, key)) this[key] = saved[key];
+                        });
+                        if (Array.isArray(saved.foods) && saved.foods.length) this.foods = saved.foods;
+                        if (Array.isArray(saved.mealSelections) && saved.mealSelections.length === this.meals.length) this.mealSelections = saved.mealSelections;
+                        if (Array.isArray(saved.mealManualItems) && saved.mealManualItems.length === this.meals.length) this.mealManualItems = saved.mealManualItems;
+                        if (saved.quickEntry && typeof saved.quickEntry === 'object') this.quickEntry = { ...this.quickEntry, ...saved.quickEntry };
+                        this.saveStatus = '已恢复上次保存的数据（仅当前浏览器）';
+                        this.saveStatusType = 'normal';
+                    } catch (error) {
+                        this.saveStatus = '读取本机数据失败，请点击“保存我的数据”重试';
+                        this.saveStatusType = 'error';
+                    }
+                },
+                queueAutoSave() {
+                    if (!this.autoSaveReady) return;
+                    if (this.autoSaveTimer) window.clearTimeout(this.autoSaveTimer);
+                    this.autoSaveTimer = window.setTimeout(() => this.saveUserData(true), 500);
+                },
+                saveUserData(silent = false) {
+                    try {
+                        window.localStorage.setItem(this.storageKey, JSON.stringify(this.snapshotUserData()));
+                        const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+                        this.saveStatus = `${silent ? '已自动保存' : '已保存'} ${time}（仅当前浏览器）`;
+                        this.saveStatusType = 'normal';
+                    } catch (error) {
+                        this.saveStatus = '保存失败：浏览器可能禁用了本机存储或空间不足';
+                        this.saveStatusType = 'error';
+                    }
+                },
+                async exportDailyMenu() {
+                    const exportCard = this.$refs.menuExportCard;
+                    if (!exportCard || !this.selectedMenu) return;
+                    this.exportingFormat = 'png';
+                    this.exportStatus = '正在生成当天食谱…';
+                    this.exportStatusType = 'normal';
+                    try {
+                        await this.$nextTick();
+                        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+                        if (typeof window.html2canvas !== 'function') throw new Error('PNG组件未加载');
+                        const canvas = await window.html2canvas(exportCard, {
+                            backgroundColor: '#ffffff',
+                            scale: 2,
+                            logging: false,
+                            useCORS: true,
+                            windowWidth: 1200,
+                            windowHeight: Math.max(800, exportCard.scrollHeight + 100),
+                            onclone: clonedDocument => {
+                                const clonedSheet = clonedDocument.getElementById('menu-export-sheet');
+                                if (clonedSheet) {
+                                    clonedSheet.style.position = 'absolute';
+                                    clonedSheet.style.left = '0';
+                                    clonedSheet.style.top = '0';
+                                    clonedSheet.style.zIndex = '0';
+                                }
+                            }
+                        });
+                        const now = new Date();
+                        const dateStamp = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+                        const fileBase = `地中海食谱_Day${this.selectedMenu.day}_${this.dailyTarget.calories}kcal_${dateStamp}`;
+
+                        await new Promise((resolve, reject) => {
+                            canvas.toBlob(blob => {
+                                if (!blob) return reject(new Error('PNG生成失败'));
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `${fileBase}.png`;
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                                resolve();
+                            }, 'image/png');
+                        });
+                        this.exportStatus = 'PNG 已开始下载';
+                    } catch (error) {
+                        this.exportStatus = `下载失败：${error && error.message ? error.message : '请检查网络后重试'}`;
+                        this.exportStatusType = 'error';
+                    } finally {
+                        this.exportingFormat = '';
+                    }
+                },
                 foodById(id) { return this.foods.find(f => f.id === id); },
                 menuItemLabel(item) {
                     const f = this.foodById(item.id);
@@ -663,19 +855,81 @@
                     if (!meal || !meal.items) return total;
                     meal.items.forEach(item => {
                         const f = this.foodById(item.id);
-                        const m = this.calcFoodMacros(f, item.grams);
-                        total.carb += m.carb; total.protein += m.protein; total.fat += m.fat; total.calories += m.calories;
+                        const grams = Math.max(0, Number(item.grams) || 0);
+                        if (!f || grams <= 0) return;
+                        const carb = (grams / 100) * (f.netCarbs || 0);
+                        const protein = (grams / 100) * (f.protein || 0);
+                        const fat = (grams / 100) * (f.fat || 0);
+                        total.carb += carb; total.protein += protein; total.fat += fat; total.calories += carb * 4 + protein * 4 + fat * 9;
                     });
                     return { carb: Math.round(total.carb), protein: Math.round(total.protein), fat: Math.round(total.fat), calories: Math.round(total.calories) };
                 },
                 menuDayMacros(menu) {
+                    const total = this.menuDayMacrosRaw(menu);
+                    return { carb: Math.round(total.carb), protein: Math.round(total.protein), fat: Math.round(total.fat), calories: Math.round(total.calories) };
+                },
+                menuDayMacrosRaw(menu) {
                     let total = { carb: 0, protein: 0, fat: 0, calories: 0 };
                     if (!menu || !menu.meals) return total;
                     menu.meals.forEach(meal => {
-                        const m = this.menuMealMacros(meal);
-                        total.carb += m.carb; total.protein += m.protein; total.fat += m.fat; total.calories += m.calories;
+                        (meal.items || []).forEach(item => {
+                            const f = this.foodById(item.id);
+                            const grams = Math.max(0, Number(item.grams) || 0);
+                            if (!f || grams <= 0) return;
+                            const carb = (grams / 100) * (f.netCarbs || 0);
+                            const protein = (grams / 100) * (f.protein || 0);
+                            const fat = (grams / 100) * (f.fat || 0);
+                            total.carb += carb;
+                            total.protein += protein;
+                            total.fat += fat;
+                            total.calories += carb * 4 + protein * 4 + fat * 9;
+                        });
                     });
-                    return { carb: Math.round(total.carb), protein: Math.round(total.protein), fat: Math.round(total.fat), calories: Math.round(total.calories) };
+                    return total;
+                },
+                scaleMenuToCalories(menu, targetCalories) {
+                    if (!menu || !menu.meals) return menu;
+                    const target = Math.max(1, Math.round(Number(targetCalories) || 0));
+                    const base = this.menuDayMacrosRaw(menu);
+                    const scaleFactor = base.calories > 0 ? target / base.calories : 1;
+                    const scaled = {
+                        ...menu,
+                        _baseCalories: Math.round(base.calories),
+                        _scaleFactor: scaleFactor,
+                        meals: menu.meals.map(meal => ({
+                            ...meal,
+                            items: (meal.items || []).map(item => ({
+                                ...item,
+                                grams: Math.max(1, Math.round((Number(item.grams) || 0) * scaleFactor))
+                            }))
+                        }))
+                    };
+
+                    // 先按统一比例缩放，再以1g为步长微调，使展示/套用后的全天热量四舍五入后等于账本目标。
+                    let currentCalories = this.menuDayMacrosRaw(scaled).calories;
+                    const adjustableItems = [];
+                    scaled.meals.forEach(meal => (meal.items || []).forEach(item => {
+                        const food = this.foodById(item.id);
+                        if (!food) return;
+                        const caloriesPerGram = ((food.netCarbs || 0) * 4 + (food.protein || 0) * 4 + (food.fat || 0) * 9) / 100;
+                        if (caloriesPerGram > 0) adjustableItems.push({ item, caloriesPerGram });
+                    }));
+
+                    for (let step = 0; step < 5000 && Math.round(currentCalories) !== target; step++) {
+                        const direction = currentCalories < target ? 1 : -1;
+                        let best = null;
+                        adjustableItems.forEach(candidate => {
+                            if (direction < 0 && candidate.item.grams <= 1) return;
+                            const nextCalories = currentCalories + direction * candidate.caloriesPerGram;
+                            const distance = Math.abs(target - nextCalories);
+                            if (!best || distance < best.distance) best = { ...candidate, nextCalories, distance };
+                        });
+                        if (!best || best.distance >= Math.abs(target - currentCalories)) break;
+                        best.item.grams += direction;
+                        currentCalories = best.nextCalories;
+                    }
+
+                    return scaled;
                 },
                 applyMediterraneanMenu() {
                     const menu = this.selectedMenu;
